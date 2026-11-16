@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+  TECHNICIAN
+  COMMUNITY
+}
+
+enum WaterPointType {
+  BOREHOLE
+  HANDPUMP
+  MOTORISED_SYSTEM
+  SPRING
+  OTHER
+}
+
+enum WaterPointStatus {
+  OPERATIONAL
+  PARTIALLY_OPERATIONAL
+  NON_OPERATIONAL
+  UNKNOWN
+}
+
+enum FaultCategory {
+  MECHANICAL_FAILURE
+  PUMP_FAILURE
+  ELECTRICAL_FAILURE
+  PIPE_LEAKAGE
+  WATER_QUALITY_CONCERN
+  LOW_YIELD
+  OTHER
+}
+
+enum PriorityLevel {
+  CRITICAL
+  HIGH
+  NORMAL
+}
+
+enum FaultStatus {
+  REPORTED
+  UNDER_ASSESSMENT
+  APPROVED
+  ASSIGNED
+  IN_PROGRESS
+  REPAIR_COMPLETED
+  AWAITING_CONFIRMATION
+  RESTORED
+  REJECTED
+  CANCELLED
+  REOPENED
+}
+
+enum ConfirmationResult {
+  WATER_RESTORED
+  NOT_RESTORED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  phone         String?   @unique
+  role          UserRole  @default(COMMUNITY)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  reportedFaults FaultReport[] @relation("FaultReporter")
+  assignedJobs  RepairJob[] @relation("AssignedTechnician")
+  updates       RepairUpdate[]
+  confirmations RestorationConfirmation[]
+  operatedPoints WaterPoint[] @relation("PointOperator")
+  technicianProfile TechnicianProfile?
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@index([identifier])
+}
+
+model WaterPoint {
+  id              String           @id @default(cuid())
+  code            String           @unique
+  name            String
+  type            WaterPointType
+  county          String
+  subCounty       String?
+  community       String?
+  latitude        Float?
+  longitude       Float?
+  peopleServed    Int              @default(0)
+  servesSchool    Boolean          @default(false)
+  servesHealthFacility Boolean     @default(false)
+  alternativeWaterAvailable Boolean @default(true)
+  status          WaterPointStatus @default(UNKNOWN)
+  notes           String?
+  operatorId      String?
+  operator        User?            @relation("PointOperator", fields: [operatorId], references: [id], onDelete: SetNull)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  faults          FaultReport[]
+  @@index([county, status])
+}
+
+model TechnicianProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills      String[]
+  serviceAreas String[]
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FaultReport {
+  id                 String         @id @default(cuid())
+  reference          String         @unique
+  waterPointId       String
+  waterPoint         WaterPoint     @relation(fields: [waterPointId], references: [id], onDelete: Restrict)
+  reporterId         String
+  reporter           User           @relation("FaultReporter", fields: [reporterId], references: [id], onDelete: Restrict)
+  category           FaultCategory
+  description        String
+  peopleAffected     Int            @default(0)
+  downtimeHours      Int            @default(0)
+  allServiceInterrupted Boolean     @default(false)
+  alternativeWaterAvailable Boolean @default(true)
+  priority           PriorityLevel  @default(NORMAL)
+  priorityScore      Int            @default(0)
+  status             FaultStatus    @default(REPORTED)
+  operatorOverrideReason String?
+  rejectedReason     String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  repairJob          RepairJob?
+  updates            RepairUpdate[]
+  @@index([status, priority, createdAt])
+  @@index([waterPointId, createdAt])
+}
+
+model RepairJob {
+  id            String      @id @default(cuid())
+  faultReportId String      @unique
+  faultReport   FaultReport @relation(fields: [faultReportId], references: [id], onDelete: Cascade)
+  technicianId String?
+  technician   User?       @relation("AssignedTechnician", fields: [technicianId], references: [id], onDelete: SetNull)
+  estimatedCost Decimal?    @db.Decimal(12, 2)
+  approvedCost  Decimal?    @db.Decimal(12, 2)
+  assignedAt    DateTime?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  restoredAt    DateTime?
+  confirmations RestorationConfirmation[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  @@index([technicianId, updatedAt])
+}
+
+model RepairUpdate {
+  id           String      @id @default(cuid())
+  faultReportId String
+  faultReport  FaultReport @relation(fields: [faultReportId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User        @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  status       FaultStatus
+  notes        String
+  createdAt    DateTime    @default(now())
+  @@index([faultReportId, createdAt])
+}
+
+model RestorationConfirmation {
+  id           String             @id @default(cuid())
+  repairJobId  String
+  repairJob    RepairJob          @relation(fields: [repairJobId], references: [id], onDelete: Cascade)
+  confirmedById String
+  confirmedBy  User               @relation(fields: [confirmedById], references: [id], onDelete: Restrict)
+  result       ConfirmationResult
+  notes        String?
+  confirmedAt  DateTime           @default(now())
+  @@index([repairJobId, confirmedAt])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorId     String
+  actorEmail  String
+  action      String
+  entityType  String
+  entityId    String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
+}
