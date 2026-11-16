@@ -7,7 +7,7 @@ The analytics module turns recorded platform activity into operational measures 
 ## Access scope
 
 | Role | Analytics scope |
-|---|---|
+| --- | --- |
 | ADMIN | All platform records |
 | OPERATOR | Faults and water points assigned to that operator |
 | TECHNICIAN | Repair jobs assigned to that technician |
@@ -26,7 +26,7 @@ Every aggregate, group-by query and supporting lookup must use the same role sco
 ## Metric definitions
 
 | Metric | Definition |
-|---|---|
+| --- | --- |
 | Water points | Current registry count in the user's access scope. |
 | Operational water points | Current registry status equals `OPERATIONAL`; this is not a historical as-at measure. |
 | Fault reports | Reports created within the selected date range. |

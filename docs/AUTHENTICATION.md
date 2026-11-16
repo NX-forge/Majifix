@@ -18,7 +18,7 @@ A verified email does not automatically activate an account. An administrator mu
 ## Account statuses
 
 | Status | Meaning | Can create a session |
-|---|---|---|
+| --- | --- | --- |
 | `PENDING` | Registration or approval is incomplete | No |
 | `ACTIVE` | Account is approved | Yes |
 | `SUSPENDED` | Administrator has disabled access | No |
@@ -30,7 +30,7 @@ Suspension requires a reason between 10 and 500 characters. The reason is retain
 ## Roles
 
 | Role | Access |
-|---|---|
+| --- | --- |
 | `COMMUNITY` | Submit faults, view own fault records and confirm restoration on own reports |
 | `TECHNICIAN` | View assigned repair jobs and update their repair progress |
 | `OPERATOR` | Manage water points, assess reports, assign technicians, manage repair workflow and confirm restoration |
@@ -77,7 +77,7 @@ Cookie caching is intentionally disabled so that database revocation takes effec
 Better Auth rate limiting is enabled in development and production and stored in PostgreSQL:
 
 | Endpoint | Limit |
-|---|---|
+| --- | --- |
 | General authentication endpoints | 100 requests per 60 seconds |
 | Email sign-in | 5 requests per 60 seconds |
 | Email sign-up | 5 requests per 10 minutes |

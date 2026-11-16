@@ -18,7 +18,7 @@ All callers must have an active authenticated account. The server rechecks the w
 ## Report fields
 
 | Field | Validation / meaning |
-|---|---|
+| --- | --- |
 | Water point | Required registered water-point ID |
 | Category | Mechanical, pump, electrical, pipe leakage, water-quality concern, low yield or other |
 | Description | 10–2,000 characters |
@@ -44,7 +44,7 @@ The database-backed file approach is suitable for the bounded MVP upload size. B
 The priority score is the sum of the following factors.
 
 | Factor | Condition | Points |
-|---|---|---:|
+| --- | --- | ---: |
 | People affected | 50–199 | 1 |
 | People affected | 200–499 | 2 |
 | People affected | 500 or more | 3 |
@@ -87,7 +87,7 @@ This phase implements report submission, initial prioritisation, evidence, dupli
 ## Access control
 
 | Role | List and detail access | Create | Assess / override | Download evidence |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Admin | All reports | Yes | Yes | All reports |
 | Operator | Reports for assigned water points | Yes, assigned points only | Assigned water points only | Assigned water points only |
 | Technician | Assigned repair jobs only | No | No | Assigned jobs only |

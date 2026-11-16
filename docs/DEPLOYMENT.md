@@ -1,8 +1,9 @@
 # Deployment Guide
 
 ## Environment variables
+
 | Variable | Required | Description |
-|---|---|---|
+| --- | --- | --- |
 | `DATABASE_URL` | Yes | PostgreSQL connection URL |
 | `BETTER_AUTH_SECRET` | Yes | Random secret, at least 32 characters |
 | `BETTER_AUTH_URL` | Yes | Canonical application URL used by Better Auth |
@@ -19,6 +20,7 @@
 | `SEED_DEMO_PASSWORD` | Only for seed | Password used for local demo accounts |
 
 ## Release steps
+
 1. Create managed PostgreSQL and enable backups/TLS.
 2. Set production environment variables in the hosting provider.
 3. Build the application in CI.
@@ -29,6 +31,7 @@
 8. Confirm monitoring, backup restore and rollback procedures.
 
 ## Production rules
+
 - Never commit `.env`.
 - Never use the local default PostgreSQL password in production.
 - Never seed demo accounts into production.

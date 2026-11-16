@@ -1,12 +1,14 @@
 # Testing Strategy
 
 ## Automated checks
+
 - `pnpm typecheck` – TypeScript diagnostics.
 - `pnpm lint` – ESLint.
 - `pnpm test` – Vitest unit tests.
 - `pnpm build` – production build and Prisma generation.
 
 ## Phase 2 authentication acceptance scenarios
+
 1. Registration creates a `COMMUNITY` account in `PENDING` status.
 2. Public registration cannot set a role or account status.
 3. Unverified accounts cannot sign in.
@@ -29,6 +31,7 @@
 20. A suspended technician cannot receive a new repair assignment.
 
 ## Existing domain acceptance scenarios
+
 1. A visitor cannot open protected dashboard routes.
 2. A technician cannot access or update a job assigned to another technician.
 3. A fault cannot be approved without assessment notes.
@@ -51,8 +54,8 @@ pnpm test
 pnpm build
 ```
 
-
 ## Phase 4 fault reporting acceptance scenarios
+
 1. Only active community, operator and admin accounts can submit reports.
 2. An operator can report only against water points assigned to that operator.
 3. A report must reference an existing water point and pass server-side field validation.
@@ -70,10 +73,10 @@ pnpm build
 15. Automatic water-point status changes are recorded with a reason and actor.
 
 ## Phase 4 unit-test coverage
+
 - Priority thresholds and factor breakdown.
 - Role-specific report visibility, management and submission policies.
 - Evidence file signature, size and filename validation.
-
 
 ## Phase 5 tests
 
@@ -93,7 +96,6 @@ pnpm build
 - [ ] Repeat-report counts are described as repeated reports, not confirmed recurring defects.
 - [ ] Historical date filters do not imply historical water-point status.
 - [ ] Analytics duration sample cap is visible in the UI and documentation.
-
 
 ## Phase 7 notification checks
 

@@ -1,6 +1,7 @@
 # Phase 6 Acceptance Checklist: Dashboards and Analytics
 
 ## Access scope
+
 - [ ] Administrator can view platform-wide metrics.
 - [ ] Operator sees only water points assigned to that operator and their reports.
 - [ ] Technician sees only reports and repair jobs assigned to that technician.
@@ -9,6 +10,7 @@
 - [ ] Dashboard counts do not expose global totals to scoped roles.
 
 ## Metrics
+
 - [ ] Water-point count and current operational count are scoped correctly.
 - [ ] Fault totals, active faults and critical active faults are correct.
 - [ ] Restoration rate uses restored reports divided by all reports in the report cohort.
@@ -22,6 +24,7 @@
 - [ ] Technician workload is available only to administrators and operators.
 
 ## Date range and presentation
+
 - [ ] Default range covers the most recent 30 `Africa/Nairobi` calendar days.
 - [ ] Custom date range uses inclusive local start and end dates.
 - [ ] Invalid dates and reversed ranges show a validation message and use the default range.
@@ -30,6 +33,7 @@
 - [ ] Current registry status is not presented as historical status.
 
 ## Automated and environment checks
+
 - [x] Analytics helper runtime assertions pass.
 - [x] TypeScript/TSX syntax parsing passes.
 - [x] Package and TypeScript configuration JSON parse successfully.

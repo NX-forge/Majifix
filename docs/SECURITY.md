@@ -1,6 +1,7 @@
 # Security Checklist
 
 ## Authentication and account access
+
 - Better Auth manages password hashing and database-backed sessions.
 - Public sign-up always creates a `COMMUNITY` account in `PENDING` status.
 - Role and account status are non-input additional fields and are not accepted from public registration.
@@ -16,6 +17,7 @@
 - Resend email credentials are required in production.
 
 ## Application authorisation
+
 - Every protected server page calls `requireUser`.
 - Every server action checks the caller's role and record ownership.
 - Community members can view only their own fault reports and timelines.
@@ -26,6 +28,7 @@
 - Team management is administrator-only.
 
 ## Operational requirements before a real pilot
+
 - Configure the production origin and trusted origins exactly.
 - Configure trusted proxy IP headers for production rate limiting.
 - Use a verified Resend sender domain and monitor delivery failures.
@@ -40,7 +43,6 @@
 - Test database backup and restore procedures.
 
 This checklist is not a security certification. Complete a security review before collecting real community data.
-
 
 ## Water-point registry scope
 
@@ -63,7 +65,6 @@ This checklist is not a security certification. Complete a security review befor
 - Evidence is served as an attachment with `X-Content-Type-Options: nosniff` and `Cache-Control: private, no-store`.
 - Priority overrides require a reason and are recorded in both the repair timeline and audit log.
 - Fault report submission has duplicate and per-user rate safeguards.
-
 
 ## Repair workflow controls
 
