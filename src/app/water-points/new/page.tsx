@@ -8,6 +8,7 @@ const errors: Record<string, string> = {
   invalid: "Check the form. Some fields are missing or invalid. If you entered coordinates, provide both latitude and longitude.",
   "duplicate-code": "That water-point code is already in use. Choose a different code.",
   "invalid-operator": "Select an active operator account or leave the water point unassigned.",
+  "rate-limited": "Too many water-point changes were submitted. Try again later.",
 };
 
 export default async function NewWaterPointPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {

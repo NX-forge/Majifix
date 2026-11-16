@@ -4,8 +4,9 @@ import { requireUser } from "@/lib/auth-guard";
 import { buildFaultReportScope, buildWaterPointScope } from "@/lib/analytics/scope";
 import { prisma } from "@/lib/prisma";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { user } = await requireUser();
+  const query = await searchParams;
 
   // Keep dashboard aggregates inside the same ownership boundaries as the records.
   const faultScope = buildFaultReportScope(user.role, user.id);
@@ -30,6 +31,8 @@ export default async function DashboardPage() {
 
   const canManage = user.role === UserRole.ADMIN || user.role === UserRole.OPERATOR;
   return <>
+    {query.error === "rate-limited" && <div className="notice error" role="alert">Too many changes were submitted in a short period. Please wait and try again.</div>}
+    {query.error === "forbidden" && <div className="notice error" role="alert">Your account does not have permission to access that resource.</div>}
     <div className="page-head">
       <div><div className="eyebrow">Overview</div><h1>Good to see you, {user.name.split(" ")[0]}.</h1><p className="muted" style={{ margin: 0 }}>Here is the current water-point repair picture.</p></div>
       <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>

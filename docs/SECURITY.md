@@ -76,3 +76,14 @@ This checklist is not a security certification. Complete a security review befor
 - Repair delay and evidence actions verify access to the associated repair job.
 - Repair evidence downloads are private, use `nosniff`, `no-store` and a restrictive content security policy.
 - Technician accounts cannot confirm water restoration.
+
+## Phase 8 hardening
+
+- All routes receive a Content Security Policy, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, strict referrer policy, a restrictive Permissions Policy and same-origin resource policy.
+- Production responses add HSTS and `upgrade-insecure-requests`. Development CSP permits the local Next.js eval and WebSocket tooling only in development.
+- Authenticated write actions for water-point creation, edits, status changes, repair-evidence uploads, fault assessment, assignment, repair updates, cost decisions, delays, restoration, priority overrides, account access changes and session revocation use the existing PostgreSQL `RateLimit` table with namespaced keys and conditional updates. Fault submission retains its separate 10-per-hour transactional throttle.
+- The notification dispatch endpoint validates its worker bearer secret with a constant-time comparison and rejects missing or short secrets.
+- Audit events for business mutations are written inside their business transaction. PostgreSQL integration tests verify fault/audit persistence and transaction rollback.
+- `/privacy` describes the current data categories, purposes, access boundaries and default retention periods. The operator must replace the controller/contact placeholder before a public pilot.
+- `pnpm db:retention:report` is dry-run only. `pnpm db:retention:execute` deletes only aged notifications, expired sessions, expired verification tokens and stale rate-limit counters. Production execution requires `RETENTION_MAINTENANCE_CONFIRM=DELETE_EXPIRED_DATA`. Fault, repair, evidence and audit records are excluded.
+- Integration tests require `TEST_DATABASE_URL` pointing to a disposable database ending in `_test` or `-test`. Browser role tests use dedicated test accounts and must not use production credentials.

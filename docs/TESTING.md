@@ -102,3 +102,13 @@ pnpm build
 - Verify in-app visibility and email delivery preferences are respected independently.
 - Verify users cannot read or mark another user's notifications as read.
 - Verify the dispatcher rejects missing or invalid worker secrets, retries failures, caps attempts at five, and recovers stale `SENDING` claims.
+
+## Phase 8 security and integration checks
+
+- `pnpm test` includes unit tests for security headers, constant-time worker-secret validation, rate-limit decisions and retention policy.
+- `pnpm test:integration` runs PostgreSQL persistence, rollback, session-revocation and concurrent rate-limit tests only when `TEST_DATABASE_URL` is set. The target database name must end in `_test` or `-test`.
+- `pnpm test:e2e` runs Playwright tests for unauthenticated redirects, worker endpoint rejection, optional admin/community access boundaries and a full repair-to-restoration workflow when dedicated accounts and a fresh `E2E_WORKFLOW_FAULT_ID` are supplied. Install Chromium with `pnpm exec playwright install chromium`.
+- `pnpm security:audit` checks production dependency advisories.
+- `pnpm db:retention:report` previews eligible data without deleting it. Execute cleanup only after reviewing the report.
+
+See [Phase 8 acceptance](./PHASE_8_ACCEPTANCE.md) for setup, environment variables and release gates.

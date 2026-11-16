@@ -122,3 +122,10 @@ The dashboard includes report volume, active and critical faults, restoration ra
 - `GET /notifications` is an authenticated page for the signed-in user's in-app notifications and preferences.
 - `POST /api/notifications/dispatch` is a protected scheduler endpoint. It requires `Authorization: Bearer <NOTIFICATION_WORKER_SECRET>` and sends up to 20 queued emails per call.
 - Notification read and preference updates use authenticated server actions. A user can only update their own notification records and preferences.
+
+## Security and operational endpoints
+
+- `POST /api/notifications/dispatch` requires a bearer token matching `NOTIFICATION_WORKER_SECRET`; missing, short or incorrect secrets receive HTTP 401.
+- Server actions for water-point writes and repair-evidence uploads use database-backed per-user fixed-window limits. Fault submissions retain their dedicated transactional 10-per-hour limit.
+- Global security headers are applied through Next.js configuration. Production adds HSTS and disables `unsafe-eval` in the CSP.
+- `/privacy` publishes the current data-handling and retention summary.

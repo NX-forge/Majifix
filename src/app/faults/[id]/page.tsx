@@ -32,6 +32,7 @@ const errorMessages: Record<string, string> = {
   "evidence-too-large": "Evidence files must not exceed 4 MB.",
   "unsupported-evidence": "Use a valid JPEG, PNG, WebP or PDF file.",
   "invalid-evidence-caption": "Evidence captions must be 300 characters or fewer.",
+  "rate-limited": "Too many evidence uploads were submitted. Try again later.",
 };
 
 export default async function FaultDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string; estimate?: string; delay?: string; evidence?: string }> }) {
