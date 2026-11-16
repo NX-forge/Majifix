@@ -115,3 +115,10 @@ These are server actions rather than public unauthenticated REST endpoints. Ever
 - Community members see only reports they submitted and water points referenced by those reports.
 
 The dashboard includes report volume, active and critical faults, restoration rate, report-to-assignment time, repair duration, report-to-restoration downtime, unresolved repair delays, fault category and priority distributions, status distribution, repeat-report water points, and technician workload for administrators/operators. Missing or reversed timestamps are excluded from duration calculations. The selected range defaults to the most recent 30 calendar days.
+
+
+## Notifications
+
+- `GET /notifications` is an authenticated page for the signed-in user's in-app notifications and preferences.
+- `POST /api/notifications/dispatch` is a protected scheduler endpoint. It requires `Authorization: Bearer <NOTIFICATION_WORKER_SECRET>` and sends up to 20 queued emails per call.
+- Notification read and preference updates use authenticated server actions. A user can only update their own notification records and preferences.

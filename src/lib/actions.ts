@@ -13,6 +13,7 @@ import { faultReportSchema, waterPointSchema, waterPointStatusChangeSchema } fro
 import { canManuallySetWaterPointStatus, deriveWaterPointStatusFromActiveFaults } from "@/lib/water-point-policy";
 import { canManageRepair, canTechnicianRespondToAssignment, canTechnicianWorkOnRepair, isTechnicianRepairTransitionAllowed, isRepairCostCleared, isValidRepairEstimate, isValidRepairNote, technicianCoversAreas } from "@/lib/repair-policy";
 import { repairAssignmentDecisionSchema, repairCostDecisionSchema, repairDelaySchema, repairEstimateSchema, resolveRepairDelaySchema } from "@/lib/repair-validators";
+import { safelyNotifyFaultParticipants, safelyNotifyUsers } from "@/lib/notifications/service";
 
 function formString(formData: FormData, key: string) { return String(formData.get(key) ?? ""); }
 function formBool(formData: FormData, key: string) { return formData.get(key) === "on" || formData.get(key) === "true"; }
@@ -282,6 +283,7 @@ export async function createFaultReportAction(formData: FormData) {
   if (result.kind === "rate-limited") redirect("/faults/new?error=rate-limited");
   if (result.kind === "duplicate") redirect(`/faults/new?duplicate=${encodeURIComponent(result.reference)}`);
 
+  await safelyNotifyFaultParticipants(result.id, { type: "FAULT_UPDATE", title: "Fault report received", message: "Your fault report has been received and is awaiting review." });
   revalidatePath("/dashboard");
   revalidatePath("/faults");
   revalidatePath("/water-points");
@@ -353,6 +355,7 @@ export async function assessFaultAction(formData: FormData) {
     });
   });
 
+  await safelyNotifyFaultParticipants(faultId, { type: "FAULT_UPDATE", title: decision === "REJECT" ? "Fault report rejected" : decision === "ASSESS" ? "Fault report under assessment" : "Fault report approved", message: decision === "REJECT" ? `Your report was rejected. ${notes}` : decision === "ASSESS" ? "Your report is now under assessment." : "Your fault report has been approved for repair." }, user.id);
   revalidatePath(`/faults/${faultId}`);
   revalidatePath("/faults");
   revalidatePath("/dashboard");
@@ -422,6 +425,10 @@ export async function assignTechnicianAction(formData: FormData) {
     throw error;
   }
 
+  await safelyNotifyFaultParticipants(faultId, { type: "ASSIGNMENT", title: "Technician assigned", message: "A technician has been assigned to this repair and must respond to the assignment." }, user.id);
+  if (fault.repairJob?.technicianId && fault.repairJob.technicianId !== technicianId) {
+    await safelyNotifyUsers([fault.repairJob.technicianId], { type: "ASSIGNMENT", title: "Repair assignment reassigned", message: `You are no longer assigned to fault ${fault.reference}. The repair has been assigned to another technician.`, href: `/faults/${faultId}`, entityType: "FaultReport", entityId: faultId });
+  }
   revalidatePath(`/faults/${faultId}`);
   revalidatePath("/faults");
   revalidatePath("/technician/jobs");
@@ -447,6 +454,7 @@ export async function acceptRepairAssignmentAction(formData: FormData) {
     if (error instanceof Error && ["ASSIGNMENT_NOT_PENDING", "ASSIGNMENT_CHANGED_CONCURRENTLY"].includes(error.message)) redirect("/technician/jobs?error=invalid-assignment");
     throw error;
   }
+  await safelyNotifyFaultParticipants(faultId, { type: "ASSIGNMENT", title: "Technician accepted assignment", message: "The assigned technician has accepted the repair." }, user.id);
   revalidatePath("/technician/jobs");
   revalidatePath(`/faults/${faultId}`);
   revalidatePath("/dashboard");
@@ -476,6 +484,7 @@ export async function declineRepairAssignmentAction(formData: FormData) {
     if (error instanceof Error && ["ASSIGNMENT_NOT_PENDING", "ASSIGNMENT_CHANGED_CONCURRENTLY"].includes(error.message)) redirect("/technician/jobs?error=invalid-assignment");
     throw error;
   }
+  await safelyNotifyFaultParticipants(faultId, { type: "ASSIGNMENT", title: "Technician declined assignment", message: `The technician declined the assignment. Reason: ${reason}` }, user.id);
   revalidatePath("/technician/jobs");
   revalidatePath(`/faults/${faultId}`);
   revalidatePath("/faults");
@@ -494,6 +503,7 @@ export async function submitRepairEstimateAction(formData: FormData) {
     await tx.repairUpdate.create({ data: { faultReportId: faultId, authorId: user.id, status: fault.status, notes: `Repair estimate submitted: KES ${estimatedCost.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. ${notes}` } });
     await tx.auditLog.create({ data: { actorId: user.id, actorEmail: user.email, action: "REPAIR_ESTIMATE_SUBMITTED", entityType: "RepairJob", entityId: fault.repairJob.id, metadata: { faultId, estimatedCost } } });
   });
+  await safelyNotifyFaultParticipants(faultId, { type: "COST_DECISION", title: "Repair estimate submitted", message: `The technician submitted a repair estimate of KES ${estimatedCost.toLocaleString("en-KE")}. It is awaiting review.` }, user.id);
   revalidatePath(`/faults/${faultId}`);
   redirect(`/faults/${faultId}?estimate=submitted`);
 }
@@ -512,6 +522,7 @@ export async function decideRepairEstimateAction(formData: FormData) {
     await tx.repairUpdate.create({ data: { faultReportId: faultId, authorId: user.id, status: fault.status, notes: `Repair estimate ${approved ? "approved" : "rejected"}. ${reason}` } });
     await tx.auditLog.create({ data: { actorId: user.id, actorEmail: user.email, action: approved ? "REPAIR_ESTIMATE_APPROVED" : "REPAIR_ESTIMATE_REJECTED", entityType: "RepairJob", entityId: fault.repairJob.id, metadata: { faultId, estimatedCost: Number(fault.repairJob.estimatedCost), reason } } });
   });
+  await safelyNotifyFaultParticipants(faultId, { type: "COST_DECISION", title: `Repair estimate ${decision.toLowerCase()}d`, message: `The repair estimate was ${decision.toLowerCase()}d. ${reason}` }, user.id);
   revalidatePath(`/faults/${faultId}`);
   revalidatePath("/faults");
   redirect(`/faults/${faultId}?estimate=${decision.toLowerCase()}d`);
@@ -538,6 +549,7 @@ export async function reportRepairDelayAction(formData: FormData) {
     await tx.repairUpdate.create({ data: { faultReportId: faultId, authorId: user.id, status: fault.status, notes: `Repair delay reported (${reason.replaceAll("_", " ")}). ${description}${partName ? ` Part: ${partName}.` : ""}` } });
     await tx.auditLog.create({ data: { actorId: user.id, actorEmail: user.email, action: "REPAIR_DELAY_REPORTED", entityType: "RepairDelay", entityId: delay.id, metadata: { faultId, reason, partName: partName || null } } });
   });
+  await safelyNotifyFaultParticipants(faultId, { type: "DELAY_UPDATE", title: "Repair delay reported", message: `A repair delay was reported: ${description}` }, user.id);
   revalidatePath(`/faults/${faultId}`);
   redirect(`/faults/${faultId}?delay=reported`);
 }
@@ -566,6 +578,7 @@ export async function resolveRepairDelayAction(formData: FormData) {
     await tx.repairUpdate.create({ data: { faultReportId: currentFault.id, authorId: user.id, status: currentFault.status, notes: `Repair delay resolved: ${parsed.data.resolutionNotes}` } });
     await tx.auditLog.create({ data: { actorId: user.id, actorEmail: user.email, action: "REPAIR_DELAY_RESOLVED", entityType: "RepairDelay", entityId: delay.id, metadata: { faultId: currentFault.id } } });
   });
+  await safelyNotifyFaultParticipants(fault.id, { type: "DELAY_UPDATE", title: "Repair delay resolved", message: `A reported repair delay has been resolved. ${parsed.data.resolutionNotes}` }, user.id);
   revalidatePath(`/faults/${fault.id}`);
   redirect(`/faults/${fault.id}?delay=resolved`);
 }
@@ -640,6 +653,7 @@ export async function updateRepairStatusAction(formData: FormData) {
     throw error;
   }
 
+  await safelyNotifyFaultParticipants(faultId, { type: nextStatus === "AWAITING_CONFIRMATION" ? "RESTORATION" : "REPAIR_UPDATE", title: nextStatus === "IN_PROGRESS" ? "Repair started" : nextStatus === "REPAIR_COMPLETED" ? "Repair work completed" : "Repair update", message: nextStatus === "AWAITING_CONFIRMATION" ? "Repair work is complete. Please confirm whether water service has been restored." : `The repair status is now ${nextStatus.replaceAll("_", " ").toLowerCase()}.` }, user.id);
   revalidatePath(`/faults/${faultId}`);
   revalidatePath("/faults");
   revalidatePath("/technician/jobs");
@@ -686,6 +700,7 @@ export async function confirmRestorationAction(formData: FormData) {
     }
     await tx.auditLog.create({ data: { actorId: user.id, actorEmail: user.email, action: "RESTORATION_CONFIRMED", entityType: "FaultReport", entityId: faultId, metadata: { result } } });
   });
+  await safelyNotifyFaultParticipants(faultId, { type: "RESTORATION", title: restored ? "Water restoration confirmed" : "Water service not yet restored", message: restored ? "The community has confirmed that water service is restored." : "The community reported that water service is not yet restored. The repair has been reopened." }, user.id);
   revalidatePath(`/faults/${faultId}`);
   revalidatePath("/faults");
   revalidatePath("/dashboard");

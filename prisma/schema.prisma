@@ -122,6 +122,8 @@ model User {
   repairDelaysReported RepairDelay[]
   repairEvidenceUploaded RepairEvidence[]
   reviewedRepairCosts RepairJob[] @relation("RepairCostReviewer")
+  notifications Notification[]
+  notificationPreference NotificationPreference?
 
   @@index([role, accountStatus])
   @@index([accountStatus, createdAt])
@@ -404,4 +406,43 @@ model RateLimit {
   lastRequest BigInt
 
   @@map("rateLimit")
+}
+
+model Notification {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           String
+  title          String
+  message        String
+  href           String?
+  entityType     String?
+  entityId       String?
+  readAt         DateTime?
+  inAppVisible   Boolean  @default(true)
+  emailStatus    String   @default("SKIPPED")
+  emailAttempts  Int      @default(0)
+  emailLastError String?
+  emailSentAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId, readAt, createdAt])
+  @@index([emailStatus, createdAt])
+}
+
+model NotificationPreference {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inAppEnabled   Boolean  @default(true)
+  emailEnabled   Boolean  @default(true)
+  faultUpdates   Boolean  @default(true)
+  assignments    Boolean  @default(true)
+  repairUpdates  Boolean  @default(true)
+  costDecisions  Boolean  @default(true)
+  delayUpdates   Boolean  @default(true)
+  restoration    Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }

@@ -22,13 +22,14 @@ MajiFix is a mobile-first repair coordination platform for rural water points. I
 - Technician assignment and repair updates.
 - Separate restoration confirmation.
 - Dashboard, report lists, fault timeline, operational analytics and audit records.
+- In-app notifications, unread tracking, per-user channel and event preferences, and queued transactional email delivery.
 - Admin-only team role management and technician profiles.
 - Documented operator priority overrides with mandatory reasons.
 - PostgreSQL data model and seed script.
 - Unit tests for priority scoring, water-point access policy and water-point validation.
 
 ### Deliberately out of the first MVP
-SMS/USSD, WhatsApp, live technician matching, AI diagnosis, IoT telemetry, parts inventory, payments and automated notifications. Add these only after the core workflow is validated.
+SMS/USSD, WhatsApp, live technician matching, AI diagnosis, IoT telemetry, parts inventory and payments. Add these only after the core workflow is validated.
 
 ## Technology
 - Next.js App Router and React
@@ -74,7 +75,7 @@ Prisma 7 is used here because the current Prisma Better Auth guide documents the
    openssl rand -base64 32
    ```
 
-   Set `BETTER_AUTH_SECRET` to the generated value. Set a strong `SEED_DEMO_PASSWORD` if you intend to load demo users. In production, configure `RESEND_API_KEY` and `RESEND_FROM_EMAIL` using a verified sender domain. Local development prints authentication email previews to the server terminal.
+   Set `BETTER_AUTH_SECRET` to the generated value. Set a strong `SEED_DEMO_PASSWORD` if you intend to load demo users. In production, configure `RESEND_API_KEY` and `RESEND_FROM_EMAIL` using a verified sender domain, and set `NOTIFICATION_WORKER_SECRET` for scheduled notification delivery. Local development prints email previews to the server terminal.
 
 4. Start PostgreSQL with Docker:
 
@@ -84,11 +85,23 @@ Prisma 7 is used here because the current Prisma Better Auth guide documents the
 
    The default local database URL is `postgresql://postgres:postgres@localhost:5432/majifix?schema=public`. Change it if your local database uses different credentials or a different port.
 
-5. Generate Prisma Client and apply the initial migration:
+5. Generate Prisma Client and apply the database migration:
 
    ```bash
    pnpm db:generate
+   ```
+
+   For a brand-new database with no migration history, create the initial migration once:
+
+   ```bash
    pnpm db:migrate --name init
+   ```
+
+   If your project already has an initial migration, keep it and create a new named migration for each schema change. For Phase 7:
+
+   ```bash
+   pnpm db:migrate --name add_notification_system
+   pnpm db:generate
    ```
 
 6. (Optional) Seed clearly labelled demo data:
@@ -265,3 +278,8 @@ See [`docs/REPAIR_MANAGEMENT.md`](docs/REPAIR_MANAGEMENT.md) for technician assi
 ## Analytics
 
 MajiFix includes role-scoped operational analytics. Administrators see platform-wide activity, operators see their assigned water points, technicians see their assigned repair work, and community users see their own submitted reports. Date filters use `Africa/Nairobi` calendar dates. See [`docs/ANALYTICS.md`](docs/ANALYTICS.md) for metric definitions, access scope, data limitations and verification steps.
+
+
+## Notifications
+
+MajiFix includes an in-app notification centre, per-user delivery preferences, and an authenticated email dispatch endpoint. See [Notification documentation](docs/NOTIFICATIONS.md) for event coverage, the named Phase 7 migration command, and scheduler setup.

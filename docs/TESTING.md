@@ -93,3 +93,12 @@ pnpm build
 - [ ] Repeat-report counts are described as repeated reports, not confirmed recurring defects.
 - [ ] Historical date filters do not imply historical water-point status.
 - [ ] Analytics duration sample cap is visible in the UI and documentation.
+
+
+## Phase 7 notification checks
+
+- Verify notification recipients are limited to the fault reporter, assigned operator, and assigned technician, excluding the actor.
+- Verify each workflow event creates the correct notification category.
+- Verify in-app visibility and email delivery preferences are respected independently.
+- Verify users cannot read or mark another user's notifications as read.
+- Verify the dispatcher rejects missing or invalid worker secrets, retries failures, caps attempts at five, and recovers stale `SENDING` claims.

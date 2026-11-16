@@ -47,3 +47,11 @@ h2 { font-size:19px; margin:0 0 14px; letter-spacing:-.3px; }
 .pagination { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:18px; margin-top:8px; border-top:1px solid var(--line); font-size:13px; }
 .field small { line-height:1.45; }
 @media(max-width:560px){.pagination{align-items:flex-start;flex-direction:column}.pagination>div{width:100%}.pagination .btn{flex:1}}
+
+.notification-unread { border-left: 3px solid var(--blue); padding-left: 14px; }
+.timeline-item { margin-left: 4px; }
+.timeline-item:last-child { border-left-color: transparent; padding-bottom: 0; }
+.checkbox input { width: 16px; height: 16px; accent-color: var(--blue); }
+@media(max-width:560px){.nav a[href="/notifications"]{font-size:0}.nav a[href="/notifications"]:before{content:"Alerts";font-size:12px}}
+
+.notification-page { display: grid; gap: 18px; }

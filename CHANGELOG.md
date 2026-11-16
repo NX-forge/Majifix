@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0 - Phase 7
+
+- Added user-scoped in-app notifications with unread counts, read actions, and mark-all-read support.
+- Added per-user notification preferences for delivery channels and event categories.
+- Added notifications for fault review, technician assignment decisions, repair estimates, repair progress, delays, and restoration outcomes.
+- Added a protected asynchronous Resend email dispatcher with retry tracking and stale-worker recovery.
+- Added notification centre navigation and operational documentation.
+
+
 ## 1.0.0 – Initial project scaffold
 - Added Next.js App Router application and responsive base UI.
 - Added PostgreSQL schema with Better Auth models and MajiFix domain models.
