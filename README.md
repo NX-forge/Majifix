@@ -261,3 +261,7 @@ The generated repository provides the initial full-stack MVP code and operationa
 ## Repair management
 
 See [`docs/REPAIR_MANAGEMENT.md`](docs/REPAIR_MANAGEMENT.md) for technician assignment, job acceptance, cost estimates, delay tracking, evidence handling and restoration handover. The Phase 5 verification checklist is in [`docs/PHASE_5_ACCEPTANCE.md`](docs/PHASE_5_ACCEPTANCE.md).
+
+## Analytics
+
+MajiFix includes role-scoped operational analytics. Administrators see platform-wide activity, operators see their assigned water points, technicians see their assigned repair work, and community users see their own submitted reports. Date filters use `Africa/Nairobi` calendar dates. See [`docs/ANALYTICS.md`](docs/ANALYTICS.md) for metric definitions, access scope, data limitations and verification steps.

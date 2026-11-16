@@ -78,3 +78,18 @@ pnpm build
 ## Phase 5 tests
 
 `src/__tests__/repair-policy.test.ts` covers manager scope, technician assignment ownership, acceptance requirements, allowed technician status transitions, service-area matching, estimate bounds, pending/rejected estimate gates, service-area matching and repair-note length. Database integration and browser end-to-end tests are still required against a disposable PostgreSQL database.
+
+## Phase 6 analytics checks
+
+- [ ] Analytics date inputs accept valid inclusive `Africa/Nairobi` calendar dates.
+- [ ] Invalid calendar dates and reversed ranges fall back to the last 30 days.
+- [ ] Admin aggregates include all records.
+- [ ] Operator aggregates exclude water points assigned to other operators.
+- [ ] Technician aggregates include only that technician's assigned repair jobs.
+- [ ] Community aggregates include only reports submitted by that account.
+- [ ] Zero denominators render as unavailable rather than `NaN` or infinity.
+- [ ] Missing or reversed timestamps do not affect duration averages.
+- [ ] Report-to-assignment, repair duration and total downtime use the documented timestamp pairs.
+- [ ] Repeat-report counts are described as repeated reports, not confirmed recurring defects.
+- [ ] Historical date filters do not imply historical water-point status.
+- [ ] Analytics duration sample cap is visible in the UI and documentation.

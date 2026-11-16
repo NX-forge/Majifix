@@ -104,3 +104,14 @@ The repair module is implemented with authenticated server actions and private e
 - `GET /api/repair-evidence/:id`: authorised private evidence download.
 
 These are server actions rather than public unauthenticated REST endpoints. Every action rechecks the user's role and relationship to the water point or repair job on the server.
+
+## Analytics
+
+`GET /analytics?from=YYYY-MM-DD&to=YYYY-MM-DD` renders the signed-in user's operational metrics for an inclusive date range interpreted in `Africa/Nairobi` time. The page is server-rendered and requires an active authenticated account.
+
+- Administrators see platform-wide metrics.
+- Operators see water points assigned to them and reports against those points.
+- Technicians see reports and repair jobs assigned to their technician account.
+- Community members see only reports they submitted and water points referenced by those reports.
+
+The dashboard includes report volume, active and critical faults, restoration rate, report-to-assignment time, repair duration, report-to-restoration downtime, unresolved repair delays, fault category and priority distributions, status distribution, repeat-report water points, and technician workload for administrators/operators. Missing or reversed timestamps are excluded from duration calculations. The selected range defaults to the most recent 30 calendar days.

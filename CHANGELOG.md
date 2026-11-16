@@ -79,3 +79,25 @@
 - Only administrators/assigned operators can hand completed repairs over for restoration confirmation.
 - Technician availability is reserved for pending assignments and released when work/assignments conclude, subject to other open jobs.
 - Reassignment clears estimates from the previous technician to prevent stale cost approvals.
+
+## [1.5.0] - Phase 6: dashboards and analytics
+
+### Added
+- Role-scoped operational analytics for administrators, operators, technicians and community reporters.
+- Inclusive date filtering interpreted in `Africa/Nairobi` time, with a 30-calendar-day default.
+- Water-point, report volume, active fault, critical fault and restoration-rate metrics.
+- Report-to-assignment, repair-duration and report-to-restoration downtime summaries.
+- Fault category, priority and status distributions.
+- Six-bucket report activity chart, repeat-report water-point table and unresolved repair-delay count.
+- Technician workload breakdown for administrators and operators.
+- Explicit metric definitions, data-quality limitations and analytics test coverage.
+
+### Changed
+- Dashboard aggregate queries now respect operator, technician and community access scopes.
+- Dashboard water-point counts no longer expose platform-wide totals to scoped users.
+- Active technician totals are displayed only to administrators and operators.
+
+### Data integrity
+- Duration calculations exclude missing, invalid and reversed timestamps.
+- Analytics labels distinguish recorded workflow events from independently verified field outcomes.
+- Registry status is documented as current status, not historical status for the selected reporting period.
