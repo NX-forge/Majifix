@@ -228,7 +228,7 @@ export default async function FaultDetailPage({ params, searchParams }: { params
 
         {canManage && ["APPROVED", "REOPENED", "ASSIGNED", "IN_PROGRESS"].includes(fault.status) && <section className="card">
           <h2>{hasPriorAssignment ? "Reassign technician" : "Assign technician"}</h2>
-          {eligibleTechnicians.length === 0 ? <p className="muted" style={{ fontSize: 13 }}>No available technicians cover this water point's service area.</p> : <form action={assignTechnicianAction} className="grid">
+          {eligibleTechnicians.length === 0 ? <p className="muted" style={{ fontSize: 13 }}>No available technicians cover this water point&apos;s service area.</p> : <form action={assignTechnicianAction} className="grid">
             <input type="hidden" name="faultId" value={fault.id} />
             <div className="field"><label htmlFor="technicianId">Technician</label><select id="technicianId" name="technicianId" required defaultValue=""><option value="" disabled>Select technician</option>{eligibleTechnicians.map((technician) => <option key={technician.id} value={technician.id}>{technician.name}{technician.technicianProfile?.skills.length ? ` · ${technician.technicianProfile.skills.join(", ")}` : ""}</option>)}</select></div>
             {hasPriorAssignment && <div className="field"><label htmlFor="assignmentReason">Reason for reassignment (10–500 characters)</label><textarea id="assignmentReason" name="assignmentReason" required minLength={10} maxLength={500}/></div>}

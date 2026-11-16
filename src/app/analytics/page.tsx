@@ -7,7 +7,6 @@ import { buildFaultReportScope, buildRepairJobScope, buildWaterPointScope } from
 
 type SearchParams = Promise<{ from?: string; to?: string }>;
 
-const CLOSED_STATUSES: FaultStatus[] = [FaultStatus.RESTORED, FaultStatus.REJECTED, FaultStatus.CANCELLED];
 const ACTIVE_STATUSES: FaultStatus[] = [
   FaultStatus.REPORTED, FaultStatus.UNDER_ASSESSMENT, FaultStatus.APPROVED,
   FaultStatus.ASSIGNED, FaultStatus.IN_PROGRESS, FaultStatus.REPAIR_COMPLETED,

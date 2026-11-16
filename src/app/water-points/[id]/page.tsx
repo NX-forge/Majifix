@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { updateWaterPointStatusAction } from "@/lib/actions";
 import { requireUser } from "@/lib/auth-guard";
 import { prisma } from "@/lib/prisma";

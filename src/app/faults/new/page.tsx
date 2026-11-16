@@ -94,7 +94,7 @@ export default async function NewFaultPage({ searchParams }: { searchParams: Pro
             </select>
           </div>
           <div className="field" style={{ justifyContent: "center" }}>
-            <div className="notice" style={{ margin: 0 }}>MajiFix calculates a suggested priority from the information provided and the water point's registered facilities. An authorised operator can change it with a recorded reason.</div>
+            <div className="notice" style={{ margin: 0 }}>MajiFix calculates a suggested priority from the information provided and the water point&apos;s registered facilities. An authorised operator can change it with a recorded reason.</div>
           </div>
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 22 }}>
