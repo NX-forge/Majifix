@@ -1,3 +1,25 @@
+import Link from "next/link";
 import { createWaterPointAction } from "@/lib/actions";
 import { requireUser } from "@/lib/auth-guard";
-export default async function NewWaterPointPage(){await requireUser(["ADMIN","OPERATOR"]);return <><div className="page-head"><div><div className="eyebrow">Registry</div><h1>Register a water point</h1><p className="muted" style={{margin:0}}>Add the details needed to route and prioritise future fault reports.</p></div></div><form action={createWaterPointAction} className="card"><div className="form-grid"><div className="field"><label>Unique code</label><input name="code" placeholder="KIT-BH-001" required/></div><div className="field"><label>Water point name</label><input name="name" placeholder="Kavaini Community Borehole" required/></div><div className="field"><label>Type</label><select name="type"><option value="BOREHOLE">Borehole</option><option value="HANDPUMP">Handpump</option><option value="MOTORISED_SYSTEM">Motorised system</option><option value="SPRING">Spring</option><option value="OTHER">Other</option></select></div><div className="field"><label>County</label><input name="county" placeholder="Kitui" required/></div><div className="field"><label>Sub-county</label><input name="subCounty"/></div><div className="field"><label>Community / village</label><input name="community"/></div><div className="field"><label>Estimated people served</label><input name="peopleServed" type="number" min="0" defaultValue="0" required/></div><div className="field" style={{justifyContent:"center",gap:12}}><label className="checkbox"><input name="servesSchool" type="checkbox"/> Serves a school</label><label className="checkbox"><input name="servesHealthFacility" type="checkbox"/> Serves a health facility</label><label className="checkbox"><input name="alternativeWaterAvailable" type="checkbox" defaultChecked/> Alternative water is available</label></div></div><div style={{display:"flex",justifyContent:"flex-end",gap:10,marginTop:22}}><button className="btn btn-primary">Save water point</button></div></form></>;}
+import { WaterPointForm } from "@/components/water-point-form";
+import { prisma } from "@/lib/prisma";
+
+const errors: Record<string, string> = {
+  invalid: "Check the form. Some fields are missing or invalid. If you entered coordinates, provide both latitude and longitude.",
+  "duplicate-code": "That water-point code is already in use. Choose a different code.",
+  "invalid-operator": "Select an active operator account or leave the water point unassigned.",
+};
+
+export default async function NewWaterPointPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const { user } = await requireUser(["ADMIN", "OPERATOR"]);
+  const { error } = await searchParams;
+  const operators = user.role === "ADMIN" ? await prisma.user.findMany({ where: { role: "OPERATOR", accountStatus: "ACTIVE" }, select: { id: true, name: true, email: true }, orderBy: { name: "asc" } }) : [];
+  return <>
+    <div className="page-head">
+      <div><div className="eyebrow">Registry</div><h1>Register a water point</h1><p className="muted" style={{ margin: 0 }}>Add the information needed to identify, locate and maintain this water point.</p></div>
+      <Link href="/water-points" className="btn btn-secondary">Back to registry</Link>
+    </div>
+    {error && <div className="notice error" role="alert">{errors[error] ?? "The request could not be completed."}</div>}
+    <WaterPointForm action={createWaterPointAction} submitLabel="Register water point" operators={operators} allowOperatorAssignment={user.role === "ADMIN"} />
+  </>;
+}

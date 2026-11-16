@@ -14,8 +14,10 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: proc
 try {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) throw new Error(`No account exists for ${email}. Register the account before promoting it.`);
+  if (!user.emailVerified) throw new Error(`The email address for ${email} must be verified before administrator promotion.`);
   await prisma.$transaction(async (tx) => {
-    await tx.user.update({ where: { id: user.id }, data: { role: "ADMIN" } });
+    await tx.user.update({ where: { id: user.id }, data: { role: "ADMIN", accountStatus: "ACTIVE", suspendedAt: null, suspensionReason: null } });
+    await tx.session.deleteMany({ where: { userId: user.id } });
     await tx.auditLog.create({
       data: {
         actorId: "system:bootstrap",

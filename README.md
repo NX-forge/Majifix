@@ -7,11 +7,16 @@ MajiFix is a mobile-first repair coordination platform for rural water points. I
 ## Product scope
 
 ### Included in this repository
-
 - Email/password authentication using Better Auth.
+- Email verification and password reset/recovery.
+- Account lifecycle: `PENDING`, `ACTIVE`, `SUSPENDED`.
 - Roles: `ADMIN`, `OPERATOR`, `TECHNICIAN`, `COMMUNITY`.
-- Water-point registry.
-- Fault reporting with validated inputs.
+- Admin-controlled account activation, role assignment and suspension.
+- Session expiry, device-session review, session revocation and password change.
+- Database-backed authentication rate limiting.
+- Water-point registry with create, edit, operator assignment, search, filters, pagination and status history.
+- Fault reporting with validated inputs, optional private evidence uploads and duplicate safeguards.
+- Transparent Critical, High and Normal triage with visible scoring factors and reasoned operator overrides.
 - Transparent rule-based priority scoring.
 - Assessment and approval/rejection.
 - Technician assignment and repair updates.
@@ -20,14 +25,12 @@ MajiFix is a mobile-first repair coordination platform for rural water points. I
 - Admin-only team role management and technician profiles.
 - Documented operator priority overrides with mandatory reasons.
 - PostgreSQL data model and seed script.
-- Unit tests for priority scoring.
+- Unit tests for priority scoring, water-point access policy and water-point validation.
 
 ### Deliberately out of the first MVP
-
 SMS/USSD, WhatsApp, live technician matching, AI diagnosis, IoT telemetry, parts inventory, payments and automated notifications. Add these only after the core workflow is validated.
 
 ## Technology
-
 - Next.js App Router and React
 - TypeScript
 - PostgreSQL
@@ -40,7 +43,6 @@ SMS/USSD, WhatsApp, live technician matching, AI diagnosis, IoT telemetry, parts
 Prisma 7 is used here because the current Prisma Better Auth guide documents the Prisma adapter path against Prisma 7. Prisma 8 is a release candidate in the current documentation and the Prisma guide notes that the Better Auth Prisma adapter path is not yet available for Prisma 8.
 
 ## Requirements
-
 - Node.js 24 LTS recommended (Node 22.12+ also meets the current Prisma Better Auth guide requirements).
 - pnpm 10 or newer.
 - Docker Desktop or a local PostgreSQL 16/17 database.
@@ -72,7 +74,7 @@ Prisma 7 is used here because the current Prisma Better Auth guide documents the
    openssl rand -base64 32
    ```
 
-   Set `BETTER_AUTH_SECRET` to the generated value. Set a strong `SEED_DEMO_PASSWORD` if you intend to load demo users.
+   Set `BETTER_AUTH_SECRET` to the generated value. Set a strong `SEED_DEMO_PASSWORD` if you intend to load demo users. In production, configure `RESEND_API_KEY` and `RESEND_FROM_EMAIL` using a verified sender domain. Local development prints authentication email previews to the server terminal.
 
 4. Start PostgreSQL with Docker:
 
@@ -103,21 +105,30 @@ Prisma 7 is used here because the current Prisma Better Auth guide documents the
 
 8. Open `http://localhost:3000`.
 
-## Create the first production administrator
+## Account approval and administrator bootstrap
 
-1. Register the intended administrator account through the normal registration page.
+1. Public registration creates a `PENDING` community account. It cannot access protected application pages.
+2. The user verifies their email using the link sent by MajiFix.
+3. The first administrator is bootstrapped through the trusted CLI command below. The email must already be verified.
+4. The administrator signs in and opens Team Access to activate other verified accounts and assign their roles.
+5. Suspending an account requires a reason and immediately revokes all its sessions.
+
+To create the first production administrator:
+
+1. Register the intended administrator through the normal registration page and verify the email address.
 2. Connect to the production database from a trusted deployment/operations environment.
 3. Run `pnpm admin:promote admin@example.com` with the registered email address.
-4. Sign in and use the Team page to grant the remaining operational roles.
+4. Sign in and use the Team page to activate the remaining operational accounts.
+
+Never expose this command through a public route or run it with an untrusted email address. The command writes an audit record and activates the verified account.
 
 The promotion script writes an audit record. Never expose this command through a public route or run it with an untrusted email address.
 
 ## Demo accounts
-
 After seeding, the following accounts are created. All use the password set in `SEED_DEMO_PASSWORD`.
 
 | Role | Email |
-| --- | --- |
+|---|---|
 | Admin | `admin@demo.majifix.local` |
 | Operator | `operator@demo.majifix.local` |
 | Technician | `technician@demo.majifix.local` |
@@ -139,7 +150,7 @@ These accounts are for local demonstration only. Do not seed them into a public 
 ## Priority rules
 
 | Signal | Points |
-| --- | ---: |
+|---|---:|
 | 50–199 people affected | 1 |
 | 200–499 people affected | 2 |
 | 500+ people affected | 3 |
@@ -159,12 +170,12 @@ The score is a transparent triage aid, not a scientific measure of harm or an au
 
 ## Roles and access
 
-- `COMMUNITY`: create reports and view own reports; confirm restoration only on own report.
-- `TECHNICIAN`: view assigned reports and update the repair stages assigned to them.
+- `COMMUNITY`: create reports, view own reports and confirm restoration only on own report.
+- `TECHNICIAN`: view assigned reports and update the repair stages assigned to them. Technicians cannot confirm restoration.
 - `OPERATOR`: manage water points, assess reports, assign technicians, update repair workflow and confirm restoration.
-- `ADMIN`: same operational access as operator in the current MVP.
+- `ADMIN`: same operational access as operator plus team and account administration.
 
-New self-registered accounts default to `COMMUNITY`. Role changes must be performed through a controlled admin workflow before production use. No public role-selection field is provided.
+New self-registered accounts default to `COMMUNITY` and `PENDING`. They must verify their email and receive administrator activation before they can create a session. Role and account status are server-controlled fields and cannot be supplied during public registration. Account status changes and role changes revoke existing sessions. The platform prevents demoting or suspending the last active administrator.
 
 ## Quality checks
 
@@ -175,7 +186,7 @@ pnpm test
 pnpm build
 ```
 
-The project scaffold includes a unit test suite for the priority engine. Before production, add browser-based end-to-end tests for the complete multi-role workflow and test the database transactions against a disposable PostgreSQL test database.
+The project includes unit tests for priority scoring and access-control policies. Before production, add browser-based end-to-end tests for the complete multi-role workflow and test authentication/database transactions against a disposable PostgreSQL test database. Run `pnpm typecheck`, `pnpm lint`, `pnpm test` and `pnpm build` after installing dependencies and applying migrations.
 
 ## Deployment outline
 
@@ -186,7 +197,8 @@ The project scaffold includes a unit test suite for the priority engine. Before 
 5. Run `pnpm build` and `pnpm start`.
 6. Configure a custom domain and HTTPS.
 7. Disable demo seeding and remove demo accounts before public launch.
-8. Configure email delivery and email verification before opening public registration.
+8. Configure Resend with a verified sender domain before opening public registration.
+9. Configure the exact production origin in `BETTER_AUTH_URL`, `NEXT_PUBLIC_APP_URL` and `BETTER_AUTH_TRUSTED_ORIGINS`.
 9. Set up error monitoring, structured logs, backups, restore drills and an incident contact.
 
 Do not run `prisma migrate dev` against production. Use `prisma migrate deploy`.
@@ -194,10 +206,8 @@ Do not run `prisma migrate dev` against production. Use `prisma migrate deploy`.
 ## Security and operational work before a real pilot
 
 This repository is a substantial MVP foundation, not a security certification or a completed field deployment. Before collecting real community data:
-
-- Add an administrator-only user/role management screen and approval process.
-- Add email verification, password reset delivery and account recovery.
-- Add rate limiting to authentication and public write endpoints.
+- Validate email delivery, account approval and password recovery with the production email provider.
+- Add rate limiting to public write endpoints in addition to the Better Auth authentication endpoints.
 - Add CSRF/origin review, security headers, abuse monitoring and upload controls before accepting evidence files.
 - Review data minimisation, retention, consent and Kenya Data Protection Act obligations.
 - Add explicit operator scope restrictions by assigned county/water point.
@@ -220,7 +230,7 @@ majifix/
 ├── .env.example
 ├── docker-compose.yml
 ├── Dockerfile
-├── prisma7.config.ts
+├── prisma.config.ts
 └── README.md
 ```
 
@@ -233,6 +243,12 @@ majifix/
 - [Server actions and authentication routes](docs/API.md)
 - [Deployment guide](docs/DEPLOYMENT.md)
 - [Security checklist](docs/SECURITY.md)
+- [Authentication and account access](docs/AUTHENTICATION.md)
+- [Water-point registry](docs/WATER_POINTS.md)
+- [Fault reporting and prioritisation](docs/FAULT_REPORTING.md)
+- [Phase 4 acceptance checklist](docs/PHASE_4_ACCEPTANCE.md)
+- [Repair management](docs/REPAIR_MANAGEMENT.md)
+- [Phase 5 acceptance checklist](docs/PHASE_5_ACCEPTANCE.md)
 - [Testing strategy](docs/TESTING.md)
 - [Demo walkthrough](docs/DEMO_GUIDE.md)
 - [Operations runbook](docs/OPERATIONS.md)
@@ -240,3 +256,8 @@ majifix/
 ## Product status
 
 The generated repository provides the initial full-stack MVP code and operational workflow. It has not been connected to your production database, deployed, independently penetration-tested or field-validated. Run the quality checks in your environment, then work through the pre-pilot checklist before real use.
+
+
+## Repair management
+
+See [`docs/REPAIR_MANAGEMENT.md`](docs/REPAIR_MANAGEMENT.md) for technician assignment, job acceptance, cost estimates, delay tracking, evidence handling and restoration handover. The Phase 5 verification checklist is in [`docs/PHASE_5_ACCEPTANCE.md`](docs/PHASE_5_ACCEPTANCE.md).

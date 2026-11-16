@@ -14,6 +14,12 @@ enum UserRole {
   COMMUNITY
 }
 
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
 enum WaterPointType {
   BOREHOLE
   HANDPUMP
@@ -64,6 +70,29 @@ enum ConfirmationResult {
   NOT_RESTORED
 }
 
+enum RepairAssignmentStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum RepairCostApprovalStatus {
+  NOT_SUBMITTED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum RepairDelayReason {
+  SPARE_PARTS_UNAVAILABLE
+  TRANSPORT
+  WEATHER
+  SITE_ACCESS
+  FUNDING
+  TECHNICAL_COMPLEXITY
+  OTHER
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String
@@ -71,7 +100,10 @@ model User {
   emailVerified Boolean   @default(false)
   image         String?
   phone         String?   @unique
-  role          UserRole  @default(COMMUNITY)
+  role          UserRole      @default(COMMUNITY)
+  accountStatus AccountStatus @default(PENDING)
+  suspendedAt   DateTime?
+  suspensionReason String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
@@ -80,8 +112,19 @@ model User {
   assignedJobs  RepairJob[] @relation("AssignedTechnician")
   updates       RepairUpdate[]
   confirmations RestorationConfirmation[]
+  uploadedFaultEvidence FaultEvidence[]
+  faultSubmissionWindow FaultSubmissionWindow?
   operatedPoints WaterPoint[] @relation("PointOperator")
+  waterPointStatusChanges WaterPointStatusChange[]
   technicianProfile TechnicianProfile?
+  repairAssignmentsReceived RepairAssignmentHistory[] @relation("RepairAssignmentRecipient")
+  repairAssignmentsMade RepairAssignmentHistory[] @relation("RepairAssignmentActor")
+  repairDelaysReported RepairDelay[]
+  repairEvidenceUploaded RepairEvidence[]
+  reviewedRepairCosts RepairJob[] @relation("RepairCostReviewer")
+
+  @@index([role, accountStatus])
+  @@index([accountStatus, createdAt])
 }
 
 model Session {
@@ -147,7 +190,26 @@ model WaterPoint {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   faults          FaultReport[]
+  statusChanges   WaterPointStatusChange[]
   @@index([county, status])
+  @@index([operatorId, county])
+  @@index([type, status])
+  @@index([createdAt])
+}
+
+model WaterPointStatusChange {
+  id             String           @id @default(cuid())
+  waterPointId   String
+  waterPoint     WaterPoint       @relation(fields: [waterPointId], references: [id], onDelete: Cascade)
+  previousStatus WaterPointStatus
+  newStatus      WaterPointStatus
+  reason         String
+  changedById    String
+  changedBy      User             @relation(fields: [changedById], references: [id], onDelete: Restrict)
+  createdAt      DateTime         @default(now())
+
+  @@index([waterPointId, createdAt])
+  @@index([changedById, createdAt])
 }
 
 model TechnicianProfile {
@@ -176,6 +238,7 @@ model FaultReport {
   alternativeWaterAvailable Boolean @default(true)
   priority           PriorityLevel  @default(NORMAL)
   priorityScore      Int            @default(0)
+  priorityFactors    Json?
   status             FaultStatus    @default(REPORTED)
   operatorOverrideReason String?
   rejectedReason     String?
@@ -183,8 +246,34 @@ model FaultReport {
   updatedAt          DateTime       @updatedAt
   repairJob          RepairJob?
   updates            RepairUpdate[]
+  evidence           FaultEvidence[]
   @@index([status, priority, createdAt])
   @@index([waterPointId, createdAt])
+}
+
+model FaultSubmissionWindow {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  windowStartedAt DateTime @default(now())
+  count           Int      @default(0)
+  updatedAt       DateTime @updatedAt
+}
+
+model FaultEvidence {
+  id             String      @id @default(cuid())
+  faultReportId  String
+  faultReport    FaultReport @relation(fields: [faultReportId], references: [id], onDelete: Cascade)
+  uploadedById   String
+  uploadedBy     User        @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  originalName   String
+  mimeType       String
+  sizeBytes      Int
+  data           Bytes       @db.ByteA
+  createdAt      DateTime    @default(now())
+
+  @@index([faultReportId, createdAt])
+  @@index([uploadedById, createdAt])
 }
 
 model RepairJob {
@@ -199,10 +288,74 @@ model RepairJob {
   startedAt     DateTime?
   completedAt   DateTime?
   restoredAt    DateTime?
+  assignmentStatus RepairAssignmentStatus @default(PENDING)
+  acceptedAt    DateTime?
+  declinedAt    DateTime?
+  declineReason String?
+  costApprovalStatus RepairCostApprovalStatus @default(NOT_SUBMITTED)
+  costApprovalReason String?
+  costReviewedById String?
+  costReviewedBy User? @relation("RepairCostReviewer", fields: [costReviewedById], references: [id], onDelete: SetNull)
   confirmations RestorationConfirmation[]
+  assignmentHistory RepairAssignmentHistory[]
+  delays RepairDelay[]
+  evidence RepairEvidence[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   @@index([technicianId, updatedAt])
+  @@index([assignmentStatus, updatedAt])
+  @@index([costApprovalStatus, updatedAt])
+}
+
+model RepairAssignmentHistory {
+  id           String   @id @default(cuid())
+  repairJobId  String
+  repairJob    RepairJob @relation(fields: [repairJobId], references: [id], onDelete: Cascade)
+  technicianId String
+  technician   User @relation("RepairAssignmentRecipient", fields: [technicianId], references: [id], onDelete: Restrict)
+  assignedById String
+  assignedBy   User @relation("RepairAssignmentActor", fields: [assignedById], references: [id], onDelete: Restrict)
+  notes        String?
+  endReason    String?
+  assignedAt   DateTime @default(now())
+  endedAt      DateTime?
+  @@index([repairJobId, assignedAt])
+  @@index([technicianId, assignedAt])
+}
+
+model RepairDelay {
+  id                  String   @id @default(cuid())
+  repairJobId         String
+  repairJob           RepairJob @relation(fields: [repairJobId], references: [id], onDelete: Cascade)
+  reportedById        String
+  reportedBy          User @relation(fields: [reportedById], references: [id], onDelete: Restrict)
+  reason              RepairDelayReason
+  description         String
+  partName            String?
+  quantity            Int?
+  supplier            String?
+  expectedResolutionAt DateTime?
+  resolvedAt          DateTime?
+  resolutionNotes     String?
+  createdAt           DateTime @default(now())
+  @@index([repairJobId, createdAt])
+  @@index([resolvedAt, expectedResolutionAt])
+}
+
+model RepairEvidence {
+  id             String   @id @default(cuid())
+  repairJobId    String
+  repairJob      RepairJob @relation(fields: [repairJobId], references: [id], onDelete: Cascade)
+  uploadedById   String
+  uploadedBy     User @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  originalName   String
+  mimeType       String
+  sizeBytes      Int
+  data           Bytes @db.ByteA
+  caption        String?
+  createdAt      DateTime @default(now())
+  @@index([repairJobId, createdAt])
+  @@index([uploadedById, createdAt])
 }
 
 model RepairUpdate {
@@ -240,4 +393,15 @@ model AuditLog {
   createdAt   DateTime @default(now())
   @@index([entityType, entityId, createdAt])
   @@index([actorId, createdAt])
+}
+
+
+// Better Auth database-backed rate limiter.
+model RateLimit {
+  id          String @id
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+
+  @@map("rateLimit")
 }

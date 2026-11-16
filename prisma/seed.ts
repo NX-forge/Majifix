@@ -23,7 +23,7 @@ async function main() {
       user = await prisma.user.findUnique({ where: { email: item.email } });
     }
     if (!user) throw new Error(`Could not create demo user ${item.email}`);
-    user = await prisma.user.update({ where: { id: user.id }, data: { name: item.name, role: item.role, emailVerified: true } });
+    user = await prisma.user.update({ where: { id: user.id }, data: { name: item.name, role: item.role, accountStatus: "ACTIVE", suspendedAt: null, suspensionReason: null, emailVerified: true } });
     records.set(item.role,user.id);
   }
   await prisma.technicianProfile.upsert({ where: { userId: records.get("TECHNICIAN")! }, update: { skills: ["Pump repair", "Electrical"], serviceAreas: ["Kitui"], available: true }, create: { userId: records.get("TECHNICIAN")!, skills: ["Pump repair", "Electrical"], serviceAreas: ["Kitui"], available: true } });
