@@ -26,7 +26,7 @@ Phase 8 strengthens the existing product before a real pilot. It does not add a 
 ## Retention defaults
 
 | Record | Default retention |
-|---|---:|
+| --- | ---: |
 | Notifications | 365 days |
 | Expired sessions | 30 days after expiry |
 | Expired verification tokens | 30 days after expiry |
