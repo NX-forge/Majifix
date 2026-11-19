@@ -310,3 +310,11 @@ Install Playwright Chromium with `pnpm exec playwright install chromium`. Copy `
 Data retention is dry-run by default. Run `pnpm db:retention:report` to inspect eligible records. Only run `pnpm db:retention:execute` after review. Production deletion also requires `RETENTION_MAINTENANCE_CONFIRM=DELETE_EXPIRED_DATA`. Fault, repair, evidence and audit records are excluded from automatic deletion.
 
 Read [Phase 8 acceptance](docs/PHASE_8_ACCEPTANCE.md), [Security](docs/SECURITY.md) and [Privacy](/privacy) before a pilot.
+
+## Phase 9: interface and user experience
+
+Phase 9 refreshes the public landing page, shared application navigation and dashboard presentation. The navigation adapts to desktop and mobile screens and only displays links relevant to each role. Server-side access checks remain the source of truth for permissions.
+
+The interface includes a skip-to-content link, keyboard focus styles, active-route indicators, reduced-motion support, responsive forms and horizontally scrollable data tables on small screens. No Prisma schema changes were needed.
+
+See [Phase 9 acceptance](docs/PHASE_9_ACCEPTANCE.md) for the completed scope and local verification commands.

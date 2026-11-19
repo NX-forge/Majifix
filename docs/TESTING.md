@@ -114,3 +114,7 @@ pnpm build
 - `pnpm db:retention:report` previews eligible data without deleting it. Execute cleanup only after reviewing the report.
 
 See [Phase 8 acceptance](./PHASE_8_ACCEPTANCE.md) for setup, environment variables and release gates.
+
+## Phase 9 UI coverage
+
+The Playwright security suite also checks the public mobile navigation menu, narrow-screen navigation behavior, and role-aware visibility of team and analytics navigation links. Run `pnpm test:e2e` with the configured test environment. The mobile public-navigation tests do not require authenticated test users.

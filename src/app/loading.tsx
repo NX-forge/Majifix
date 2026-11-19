@@ -1,6 +1,10 @@
 export default function LoadingPage() {
-  return <div className="card" style={{ padding: 32, textAlign: "center" }}>
-    <div className="eyebrow">MajiFix</div>
-    <p className="muted" style={{ margin: 8 }}>Loading your workspace…</p>
-  </div>;
+  return (
+    <div className="loading-page" role="status" aria-live="polite" aria-label="Loading MajiFix workspace">
+      <span className="loading-mark" aria-hidden="true" />
+      <div className="loading-copy"><strong>Preparing your workspace</strong><span>Loading the latest water service information…</span></div>
+      <div className="loading-skeleton-grid" aria-hidden="true"><span/><span/><span/><span/></div>
+      <span className="sr-only">Loading</span>
+    </div>
+  );
 }
