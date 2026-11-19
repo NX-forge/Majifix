@@ -19,7 +19,7 @@ export function SignOutButton() {
     }
   }
 
-  return <button className="btn btn-secondary" style={{ padding: "7px 10px" }} onClick={signOut} disabled={busy}>
+  return <button className="btn btn-secondary sign-out-button" onClick={signOut} disabled={busy}>
     {busy ? "Signing out…" : "Sign out"}
   </button>;
 }

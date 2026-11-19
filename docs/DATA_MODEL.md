@@ -49,7 +49,6 @@
 
 Operational records should not be hard-deleted through ordinary UI actions. Before production, define retention and anonymisation rules for user accounts and audit records. The current MVP does not expose deletion screens.
 
-
 ## WaterPointStatusChange
 
 Append-only status history for a water point. Stores `waterPointId`, `previousStatus`, `newStatus`, a required reason, `changedById` and `createdAt`. The history is indexed by water point and timestamp. A matching audit log entry is written for manual status changes. Fault-report and restoration-driven status changes also create history records and are associated with their fault workflow audit events.

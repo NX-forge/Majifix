@@ -1,9 +1,14 @@
-import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { auth } from "../src/lib/auth";
+import { config as loadEnv } from "dotenv";
+loadEnv({ path: process.env.TEST_ENV_FILE ?? ".env" });
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const [{ PrismaClient }, { PrismaPg }, { auth }] = await Promise.all([
+  import("../src/generated/prisma/client"),
+  import("@prisma/adapter-pg"),
+  import("../src/lib/auth"),
+]);
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) throw new Error("DATABASE_URL is required before seeding.");
+const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {

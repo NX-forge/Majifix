@@ -1,20 +1,14 @@
-import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authEmailTemplate, sendAuthEmail } from "@/lib/email";
+import { isValidBearerSecret } from "@/lib/security/secrets";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /** Protected cron endpoint. Configure a scheduler to POST with the bearer secret. */
 export async function POST(request: Request) {
-  const secret = process.env.NOTIFICATION_WORKER_SECRET;
-  const authorization = request.headers.get("authorization");
-  const suppliedSecret = authorization?.startsWith("Bearer ") ? authorization.slice(7) : "";
-  const expected = Buffer.from(secret ?? "");
-  const supplied = Buffer.from(suppliedSecret);
-  const authorized = Boolean(secret && secret.length >= 32) && expected.length === supplied.length && timingSafeEqual(expected, supplied);
-  if (!authorized) {
+  if (!isValidBearerSecret(request.headers.get("authorization"), process.env.NOTIFICATION_WORKER_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -11,3 +11,8 @@ dist
 src/generated/prisma
 
 *.tsbuildinfo
+
+playwright-report
+test-results
+blob-report
+.env.test

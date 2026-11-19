@@ -23,6 +23,9 @@ MajiFix is a mobile-first repair coordination platform for rural water points. I
 - Separate restoration confirmation.
 - Dashboard, report lists, fault timeline, operational analytics and audit records.
 - In-app notifications, unread tracking, per-user channel and event preferences, and queued transactional email delivery.
+- Global browser security headers, production HSTS, and database-backed limits on authenticated write actions.
+- Privacy notice and configurable dry-run-first data-retention maintenance.
+- Unit, PostgreSQL integration and Playwright browser test suites, plus production dependency auditing.
 - Admin-only team role management and technician profiles.
 - Documented operator priority overrides with mandatory reasons.
 - PostgreSQL data model and seed script.
@@ -40,6 +43,7 @@ SMS/USSD, WhatsApp, live technician matching, AI diagnosis, IoT telemetry, parts
 - Tailwind CSS 4
 - Zod validation
 - Vitest
+- Playwright for browser end-to-end tests
 
 Prisma 7 is used here because the current Prisma Better Auth guide documents the Prisma adapter path against Prisma 7. Prisma 8 is a release candidate in the current documentation and the Prisma guide notes that the Better Auth Prisma adapter path is not yet available for Prisma 8.
 
@@ -103,6 +107,8 @@ Prisma 7 is used here because the current Prisma Better Auth guide documents the
    pnpm db:migrate --name add_notification_system
    pnpm db:generate
    ```
+
+   Phase 8 changes no database schema, so it does not require a migration. Keep the existing initial and Phase 7 migrations.
 
 6. (Optional) Seed clearly labelled demo data:
 
@@ -283,3 +289,32 @@ MajiFix includes role-scoped operational analytics. Administrators see platform-
 ## Notifications
 
 MajiFix includes an in-app notification centre, per-user delivery preferences, and an authenticated email dispatch endpoint. See [Notification documentation](docs/NOTIFICATIONS.md) for event coverage, the named Phase 7 migration command, and scheduler setup.
+
+
+## Phase 8: testing and security
+
+Run the standard checks:
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
+pnpm security:audit
+```
+
+PostgreSQL integration tests use a separate disposable database whose name ends in `_test` or `-test`. Copy `.env.test.example` to `.env.test`, set `TEST_DATABASE_URL` and `DATABASE_URL` to that test database, apply the existing migrations to it, then run `pnpm test:integration`.
+
+Install Playwright Chromium with `pnpm exec playwright install chromium`. Copy `.env.test.example` to `.env.test`, point `DATABASE_URL` at the disposable test database, set `TEST_ENV_FILE=.env.test`, and seed the test database before running `pnpm test:e2e`. The full workflow test uses a fresh seeded fault report and changes it to `RESTORED`.
+
+Data retention is dry-run by default. Run `pnpm db:retention:report` to inspect eligible records. Only run `pnpm db:retention:execute` after review. Production deletion also requires `RETENTION_MAINTENANCE_CONFIRM=DELETE_EXPIRED_DATA`. Fault, repair, evidence and audit records are excluded from automatic deletion.
+
+Read [Phase 8 acceptance](docs/PHASE_8_ACCEPTANCE.md), [Security](docs/SECURITY.md) and [Privacy](/privacy) before a pilot.
+
+## Phase 9: interface and user experience
+
+Phase 9 refreshes the public landing page, shared application navigation and dashboard presentation. The navigation adapts to desktop and mobile screens and only displays links relevant to each role. Server-side access checks remain the source of truth for permissions.
+
+The interface includes a skip-to-content link, keyboard focus styles, active-route indicators, reduced-motion support, responsive forms and horizontally scrollable data tables on small screens. No Prisma schema changes were needed.
+
+See [Phase 9 acceptance](docs/PHASE_9_ACCEPTANCE.md) for the completed scope and local verification commands.

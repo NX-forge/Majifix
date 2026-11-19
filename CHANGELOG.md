@@ -110,3 +110,30 @@
 - Duration calculations exclude missing, invalid and reversed timestamps.
 - Analytics labels distinguish recorded workflow events from independently verified field outcomes.
 - Registry status is documented as current status, not historical status for the selected reporting period.
+
+## 1.7.0 - Phase 8: Testing and security
+
+### Added
+- Global Content Security Policy, anti-framing, MIME-sniffing, referrer, permissions and cross-origin resource headers, with production HSTS.
+- Database-backed fixed-window limits for water-point writes and repair-evidence uploads.
+- Constant-time notification worker bearer-secret validation with unit tests.
+- PostgreSQL integration tests for workflow/audit persistence and transaction rollback, guarded by a disposable test database name.
+- Playwright tests for protected routes, worker authorization and optional administrator/community role boundaries.
+- Privacy and data-handling page with configurable retention defaults.
+- Dry-run-first retention maintenance for notifications, expired sessions, expired verification records and stale rate-limit counters.
+- Security, integration, end-to-end and privacy acceptance documentation.
+
+### Changed
+- Added dedicated integration, browser, dependency-audit and retention-maintenance package scripts.
+- No Prisma schema changes were required. Existing migration history remains unchanged.
+
+## [1.8.0] - Phase 9: Interface and User Experience
+
+- Reworked the shared application shell with a responsive desktop navigation and accessible mobile navigation drawer.
+- Added role-aware navigation for administrators, operators, technicians and community users while preserving server-side route permissions.
+- Added skip-to-content navigation, active-route indicators, accessible menu labels and keyboard focus styles.
+- Refreshed the dashboard with clearer metric cards, activity hierarchy and service guidance while retaining role-scoped queries.
+- Redesigned the public landing page with a responsive repair workflow explanation and clearer registration/sign-in actions.
+- Added responsive table, form, card and footer treatments, plus reduced-motion support.
+- Added Playwright coverage for mobile navigation behavior.
+- No Prisma schema changes; no database migration required.

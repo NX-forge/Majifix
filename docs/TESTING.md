@@ -1,12 +1,14 @@
 # Testing Strategy
 
 ## Automated checks
+
 - `pnpm typecheck` – TypeScript diagnostics.
 - `pnpm lint` – ESLint.
 - `pnpm test` – Vitest unit tests.
 - `pnpm build` – production build and Prisma generation.
 
 ## Phase 2 authentication acceptance scenarios
+
 1. Registration creates a `COMMUNITY` account in `PENDING` status.
 2. Public registration cannot set a role or account status.
 3. Unverified accounts cannot sign in.
@@ -29,6 +31,7 @@
 20. A suspended technician cannot receive a new repair assignment.
 
 ## Existing domain acceptance scenarios
+
 1. A visitor cannot open protected dashboard routes.
 2. A technician cannot access or update a job assigned to another technician.
 3. A fault cannot be approved without assessment notes.
@@ -51,8 +54,8 @@ pnpm test
 pnpm build
 ```
 
-
 ## Phase 4 fault reporting acceptance scenarios
+
 1. Only active community, operator and admin accounts can submit reports.
 2. An operator can report only against water points assigned to that operator.
 3. A report must reference an existing water point and pass server-side field validation.
@@ -70,10 +73,10 @@ pnpm build
 15. Automatic water-point status changes are recorded with a reason and actor.
 
 ## Phase 4 unit-test coverage
+
 - Priority thresholds and factor breakdown.
 - Role-specific report visibility, management and submission policies.
 - Evidence file signature, size and filename validation.
-
 
 ## Phase 5 tests
 
@@ -94,7 +97,6 @@ pnpm build
 - [ ] Historical date filters do not imply historical water-point status.
 - [ ] Analytics duration sample cap is visible in the UI and documentation.
 
-
 ## Phase 7 notification checks
 
 - Verify notification recipients are limited to the fault reporter, assigned operator, and assigned technician, excluding the actor.
@@ -102,3 +104,17 @@ pnpm build
 - Verify in-app visibility and email delivery preferences are respected independently.
 - Verify users cannot read or mark another user's notifications as read.
 - Verify the dispatcher rejects missing or invalid worker secrets, retries failures, caps attempts at five, and recovers stale `SENDING` claims.
+
+## Phase 8 security and integration checks
+
+- `pnpm test` includes unit tests for security headers, constant-time worker-secret validation, rate-limit decisions and retention policy.
+- `pnpm test:integration` runs PostgreSQL persistence, rollback, session-revocation and concurrent rate-limit tests only when `TEST_DATABASE_URL` is set. The target database name must end in `_test` or `-test`.
+- `pnpm test:e2e` runs Playwright tests for unauthenticated redirects, worker endpoint rejection, optional admin/community access boundaries and a full repair-to-restoration workflow when dedicated accounts and a fresh `E2E_WORKFLOW_FAULT_ID` are supplied. Install Chromium with `pnpm exec playwright install chromium`.
+- `pnpm security:audit` checks production dependency advisories.
+- `pnpm db:retention:report` previews eligible data without deleting it. Execute cleanup only after reviewing the report.
+
+See [Phase 8 acceptance](./PHASE_8_ACCEPTANCE.md) for setup, environment variables and release gates.
+
+## Phase 9 UI coverage
+
+The Playwright security suite also checks the public mobile navigation menu, narrow-screen navigation behavior, and role-aware visibility of team and analytics navigation links. Run `pnpm test:e2e` with the configured test environment. The mobile public-navigation tests do not require authenticated test users.

@@ -16,7 +16,7 @@ Better Auth handles these routes under `/api/auth/*`:
 The application provides these user-facing pages:
 
 | Page | Purpose | Access |
-|---|---|---|
+| --- | --- | --- |
 | `/register` | Create a pending community account | Public |
 | `/login` | Sign in | Public |
 | `/verify-email` | Explain verification and resend the link | Public |
@@ -30,7 +30,7 @@ The application provides these user-facing pages:
 ## Server actions
 
 | Action | Purpose | Access |
-|---|---|---|
+| --- | --- | --- |
 | `createWaterPointAction` | Register water point and optionally assign it to an active operator | ADMIN, OPERATOR |
 | `updateWaterPointAction` | Update water-point details and admin-managed operator assignment | ADMIN or assigned OPERATOR |
 | `updateWaterPointStatusAction` | Record a reasoned status change, excluding manual promotion to `OPERATIONAL` | ADMIN or assigned OPERATOR |
@@ -55,13 +55,12 @@ Every action must authenticate the caller, verify role and record ownership, val
 - Only active technicians can receive new assignments.
 - Account role/status changes revoke all target sessions.
 
-
 ## Water-point registry actions
 
 The registry is implemented with authenticated server-rendered pages and server actions.
 
 | Page / action | Access | Behaviour |
-|---|---|---|
+| --- | --- | --- |
 | `GET /water-points` | Active authenticated users | Search, filter, paginate and browse water points within role scope |
 | `GET /water-points/new` | Admin, operator | Show registration form |
 | `createWaterPointAction` | Admin, operator | Validate and create a uniquely coded water point, assigning it to the creating operator |
@@ -75,7 +74,7 @@ Status changes are written to `WaterPointStatusChange` and `AuditLog` in one dat
 ## Fault reporting and evidence
 
 | Page / action | Access | Behaviour |
-|---|---|---|
+| --- | --- | --- |
 | `GET /faults` | Active authenticated users | Search, filter and paginate reports within the caller's role scope |
 | `GET /faults/new` | Admin, operator, community | Show the fault-report form and water points the caller may report against |
 | `createFaultReportAction` | Admin, operator, community | Validate, deduplicate, prioritise and create the report, optional evidence and audit records in one transaction |
@@ -87,7 +86,6 @@ Status changes are written to `WaterPointStatusChange` and `AuditLog` in one dat
 Evidence uploads accept one JPEG, PNG, WebP or PDF file up to 4 MB. Server-side signature validation is used; the browser-provided MIME type is not trusted.
 
 Fault report submissions are limited to 10 per user per fixed 60-minute window. A likely duplicate active report by the same user, for the same water point and category within 30 minutes, redirects to the existing report.
-
 
 ## Repair management server actions
 
@@ -116,9 +114,15 @@ These are server actions rather than public unauthenticated REST endpoints. Ever
 
 The dashboard includes report volume, active and critical faults, restoration rate, report-to-assignment time, repair duration, report-to-restoration downtime, unresolved repair delays, fault category and priority distributions, status distribution, repeat-report water points, and technician workload for administrators/operators. Missing or reversed timestamps are excluded from duration calculations. The selected range defaults to the most recent 30 calendar days.
 
-
 ## Notifications
 
 - `GET /notifications` is an authenticated page for the signed-in user's in-app notifications and preferences.
 - `POST /api/notifications/dispatch` is a protected scheduler endpoint. It requires `Authorization: Bearer <NOTIFICATION_WORKER_SECRET>` and sends up to 20 queued emails per call.
 - Notification read and preference updates use authenticated server actions. A user can only update their own notification records and preferences.
+
+## Security and operational endpoints
+
+- `POST /api/notifications/dispatch` requires a bearer token matching `NOTIFICATION_WORKER_SECRET`; missing, short or incorrect secrets receive HTTP 401.
+- Server actions for water-point writes and repair-evidence uploads use database-backed per-user fixed-window limits. Fault submissions retain their dedicated transactional 10-per-hour limit.
+- Global security headers are applied through Next.js configuration. Production adds HSTS and disables `unsafe-eval` in the CSP.
+- `/privacy` publishes the current data-handling and retention summary.

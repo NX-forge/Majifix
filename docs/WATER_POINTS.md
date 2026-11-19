@@ -15,7 +15,7 @@ The registry is the source of truth for community water infrastructure used by M
 ## Registry fields
 
 | Field | Rule |
-|---|---|
+| --- | --- |
 | Code | Required, 2–30 characters, letters/numbers/hyphens, stored uppercase and unique |
 | Name | Required, 3–120 characters |
 | Type | Required enum value |

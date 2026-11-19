@@ -1,6 +1,7 @@
 # Security Checklist
 
 ## Authentication and account access
+
 - Better Auth manages password hashing and database-backed sessions.
 - Public sign-up always creates a `COMMUNITY` account in `PENDING` status.
 - Role and account status are non-input additional fields and are not accepted from public registration.
@@ -16,6 +17,7 @@
 - Resend email credentials are required in production.
 
 ## Application authorisation
+
 - Every protected server page calls `requireUser`.
 - Every server action checks the caller's role and record ownership.
 - Community members can view only their own fault reports and timelines.
@@ -26,6 +28,7 @@
 - Team management is administrator-only.
 
 ## Operational requirements before a real pilot
+
 - Configure the production origin and trusted origins exactly.
 - Configure trusted proxy IP headers for production rate limiting.
 - Use a verified Resend sender domain and monitor delivery failures.
@@ -40,7 +43,6 @@
 - Test database backup and restore procedures.
 
 This checklist is not a security certification. Complete a security review before collecting real community data.
-
 
 ## Water-point registry scope
 
@@ -64,7 +66,6 @@ This checklist is not a security certification. Complete a security review befor
 - Priority overrides require a reason and are recorded in both the repair timeline and audit log.
 - Fault report submission has duplicate and per-user rate safeguards.
 
-
 ## Repair workflow controls
 
 - Assignment actions require an active administrator or the operator assigned to the water point.
@@ -76,3 +77,14 @@ This checklist is not a security certification. Complete a security review befor
 - Repair delay and evidence actions verify access to the associated repair job.
 - Repair evidence downloads are private, use `nosniff`, `no-store` and a restrictive content security policy.
 - Technician accounts cannot confirm water restoration.
+
+## Phase 8 hardening
+
+- All routes receive a Content Security Policy, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, strict referrer policy, a restrictive Permissions Policy and same-origin resource policy.
+- Production responses add HSTS and `upgrade-insecure-requests`. Development CSP permits the local Next.js eval and WebSocket tooling only in development.
+- Authenticated write actions for water-point creation, edits, status changes, repair-evidence uploads, fault assessment, assignment, repair updates, cost decisions, delays, restoration, priority overrides, account access changes and session revocation use the existing PostgreSQL `RateLimit` table with namespaced keys and conditional updates. Fault submission retains its separate 10-per-hour transactional throttle.
+- The notification dispatch endpoint validates its worker bearer secret with a constant-time comparison and rejects missing or short secrets.
+- Audit events for business mutations are written inside their business transaction. PostgreSQL integration tests verify fault/audit persistence and transaction rollback.
+- `/privacy` describes the current data categories, purposes, access boundaries and default retention periods. The operator must replace the controller/contact placeholder before a public pilot.
+- `pnpm db:retention:report` is dry-run only. `pnpm db:retention:execute` deletes only aged notifications, expired sessions, expired verification tokens and stale rate-limit counters. Production execution requires `RETENTION_MAINTENANCE_CONFIRM=DELETE_EXPIRED_DATA`. Fault, repair, evidence and audit records are excluded.
+- Integration tests require `TEST_DATABASE_URL` pointing to a disposable database ending in `_test` or `-test`. Browser role tests use dedicated test accounts and must not use production credentials.

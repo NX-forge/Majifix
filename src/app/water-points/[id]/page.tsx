@@ -7,6 +7,7 @@ import { canManageWaterPoint } from "@/lib/water-point-policy";
 
 const statusErrors: Record<string, string> = {
   "invalid-status": "Choose a valid status and provide a reason of at least 10 characters.",
+  "rate-limited": "Too many status changes were submitted. Wait before trying again.",
   "status-unchanged": "The water point already has that status.",
   "status-conflict": "The water-point status or assignment changed while you were editing it. Reload the page and try again.",
   "operational-requires-confirmation": "An active fault is still open. Complete the repair and obtain restoration confirmation before marking this water point operational.",

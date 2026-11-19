@@ -1,6 +1,7 @@
 # Phase 5 Acceptance Checklist
 
 ## Technician assignment
+
 - [ ] Admin/operator assigns an active, available technician.
 - [ ] Service-area matching accepts matching county/sub-county or explicit `ALL`; an empty list must not qualify.
 - [ ] Assignment reservation prevents two managers from assigning the same available technician concurrently.
@@ -10,6 +11,7 @@
 - [ ] Assignment history records each assignment and end time.
 
 ## Repair work
+
 - [ ] Only the assigned technician with an accepted assignment can start work.
 - [ ] Only that technician can mark repair work completed.
 - [ ] Pending/rejected submitted estimates block work until resolved.
@@ -18,6 +20,7 @@
 - [ ] Community/operator restoration confirmation remains a separate step.
 
 ## Cost estimate
+
 - [ ] Assigned technician submits a non-negative KES estimate with notes.
 - [ ] Estimate is pending until a manager decision.
 - [ ] Only the assigned operator/admin can approve or reject it.
@@ -25,6 +28,7 @@
 - [ ] Reassignment clears stale estimate and approval values.
 
 ## Delays and evidence
+
 - [ ] Technician/operator records a delay during active work.
 - [ ] Spare-parts delay requires part name and supports quantity/supplier.
 - [ ] Expected resolution date must be valid and future-dated.
@@ -33,6 +37,7 @@
 - [ ] Evidence download checks the caller's access to the repair.
 
 ## Verification
+
 - [ ] Prisma schema validation.
 - [ ] Prisma Client generation.
 - [ ] TypeScript check.

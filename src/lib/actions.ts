@@ -14,8 +14,15 @@ import { canManuallySetWaterPointStatus, deriveWaterPointStatusFromActiveFaults 
 import { canManageRepair, canTechnicianRespondToAssignment, canTechnicianWorkOnRepair, isTechnicianRepairTransitionAllowed, isRepairCostCleared, isValidRepairEstimate, isValidRepairNote, technicianCoversAreas } from "@/lib/repair-policy";
 import { repairAssignmentDecisionSchema, repairCostDecisionSchema, repairDelaySchema, repairEstimateSchema, resolveRepairDelaySchema } from "@/lib/repair-validators";
 import { safelyNotifyFaultParticipants, safelyNotifyUsers } from "@/lib/notifications/service";
+import { consumeUserActionRateLimit } from "@/lib/security/action-rate-limit";
 
 function formString(formData: FormData, key: string) { return String(formData.get(key) ?? ""); }
+
+async function enforceActionRateLimit(userId: string, action: string, limit = 60) {
+  if (!await consumeUserActionRateLimit({ userId, action, limit, windowMs: 60 * 60 * 1000 })) {
+    redirect("/dashboard?error=rate-limited");
+  }
+}
 function formBool(formData: FormData, key: string) { return formData.get(key) === "on" || formData.get(key) === "true"; }
 function makeReference() { return `MF-${new Date().getFullYear()}-${crypto.randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase()}`; }
 
@@ -50,6 +57,7 @@ function waterPointWriteData(data: ReturnType<typeof waterPointSchema.parse>) {
 
 export async function createWaterPointAction(formData: FormData) {
   const { user } = await requireUser(["ADMIN", "OPERATOR"]);
+  if (!await consumeUserActionRateLimit({ userId: user.id, action: "water-point-create", limit: 10, windowMs: 60 * 60 * 1000 })) redirect("/water-points/new?error=rate-limited");
   const parsed = waterPointSchema.safeParse(readWaterPointForm(formData));
   if (!parsed.success) redirect("/water-points/new?error=invalid");
 
@@ -83,6 +91,7 @@ export async function createWaterPointAction(formData: FormData) {
 export async function updateWaterPointAction(formData: FormData) {
   const { user } = await requireUser(["ADMIN", "OPERATOR"]);
   const waterPointId = formString(formData, "waterPointId");
+  if (!await consumeUserActionRateLimit({ userId: user.id, action: "water-point-update", limit: 30, windowMs: 60 * 60 * 1000 })) redirect(`/water-points/${waterPointId}/edit?error=rate-limited`);
   const parsed = waterPointSchema.safeParse(readWaterPointForm(formData));
   if (!parsed.success) redirect(`/water-points/${waterPointId}/edit?error=invalid`);
 
@@ -124,6 +133,7 @@ export async function updateWaterPointAction(formData: FormData) {
 export async function updateWaterPointStatusAction(formData: FormData) {
   const { user } = await requireUser(["ADMIN", "OPERATOR"]);
   const waterPointId = formString(formData, "waterPointId");
+  if (!await consumeUserActionRateLimit({ userId: user.id, action: "water-point-status", limit: 30, windowMs: 60 * 60 * 1000 })) redirect(`/water-points/${waterPointId}?error=rate-limited`);
   const parsed = waterPointStatusChangeSchema.safeParse({ status: formString(formData, "status"), reason: formString(formData, "reason") });
   if (!parsed.success) redirect(`/water-points/${waterPointId}?error=invalid-status`);
 
@@ -292,6 +302,7 @@ export async function createFaultReportAction(formData: FormData) {
 
 export async function assessFaultAction(formData: FormData) {
   const { user } = await requireUser(["ADMIN", "OPERATOR"]);
+  await enforceActionRateLimit(user.id, "fault-assessment", 60);
   const faultId = formString(formData, "faultId");
   const decision = formString(formData, "decision");
   const notes = formString(formData, "notes").trim();
@@ -365,6 +376,7 @@ export async function assessFaultAction(formData: FormData) {
 
 export async function assignTechnicianAction(formData: FormData) {
   const { user } = await requireUser(["ADMIN", "OPERATOR"]);
+  await enforceActionRateLimit(user.id, "technician-assignment", 30);
   const faultId = formString(formData, "faultId").trim();
   const technicianId = formString(formData, "technicianId").trim();
   const assignmentReason = formString(formData, "assignmentReason").trim();
@@ -438,6 +450,7 @@ export async function assignTechnicianAction(formData: FormData) {
 
 export async function acceptRepairAssignmentAction(formData: FormData) {
   const { user } = await requireUser(["TECHNICIAN"]);
+  await enforceActionRateLimit(user.id, "assignment-response", 30);
   const faultId = formString(formData, "faultId").trim();
   if (!faultId) redirect("/technician/jobs?error=invalid-assignment");
   try {
@@ -463,6 +476,7 @@ export async function acceptRepairAssignmentAction(formData: FormData) {
 
 export async function declineRepairAssignmentAction(formData: FormData) {
   const { user } = await requireUser(["TECHNICIAN"]);
+  await enforceActionRateLimit(user.id, "assignment-response", 30);
   const parsed = repairAssignmentDecisionSchema.safeParse({ faultId: formString(formData, "faultId"), reason: formString(formData, "reason") });
   if (!parsed.success || !parsed.data.reason || parsed.data.reason.length < 10) redirect("/technician/jobs?error=invalid-decline-reason");
   const { faultId, reason } = parsed.data;
@@ -493,6 +507,7 @@ export async function declineRepairAssignmentAction(formData: FormData) {
 
 export async function submitRepairEstimateAction(formData: FormData) {
   const { user } = await requireUser(["TECHNICIAN"]);
+  await enforceActionRateLimit(user.id, "repair-estimate-submit", 30);
   const parsed = repairEstimateSchema.safeParse({ faultId: formString(formData, "faultId"), estimatedCost: formString(formData, "estimatedCost"), notes: formString(formData, "notes") });
   if (!parsed.success || !isValidRepairEstimate(parsed.data.estimatedCost) || !isValidRepairNote(parsed.data.notes)) redirect(`/faults/${formString(formData, "faultId")}?error=invalid-estimate`);
   const { faultId, estimatedCost, notes } = parsed.data;
@@ -510,6 +525,7 @@ export async function submitRepairEstimateAction(formData: FormData) {
 
 export async function decideRepairEstimateAction(formData: FormData) {
   const { user } = await requireUser(["ADMIN", "OPERATOR"]);
+  await enforceActionRateLimit(user.id, "repair-estimate-decision", 30);
   const parsed = repairCostDecisionSchema.safeParse({ faultId: formString(formData, "faultId"), decision: formString(formData, "decision"), reason: formString(formData, "reason") });
   if (!parsed.success) redirect(`/faults/${formString(formData, "faultId")}?error=invalid-cost-decision`);
   const { faultId, decision, reason } = parsed.data;
@@ -530,6 +546,7 @@ export async function decideRepairEstimateAction(formData: FormData) {
 
 export async function reportRepairDelayAction(formData: FormData) {
   const { user } = await requireUser(["ADMIN", "OPERATOR", "TECHNICIAN"]);
+  await enforceActionRateLimit(user.id, "repair-delay-report", 30);
   const rawExpected = formString(formData, "expectedResolutionAt");
   const parsed = repairDelaySchema.safeParse({
     faultId: formString(formData, "faultId"), reason: formString(formData, "reason"), description: formString(formData, "description"),
@@ -556,6 +573,7 @@ export async function reportRepairDelayAction(formData: FormData) {
 
 export async function resolveRepairDelayAction(formData: FormData) {
   const { user } = await requireUser(["ADMIN", "OPERATOR", "TECHNICIAN"]);
+  await enforceActionRateLimit(user.id, "repair-delay-resolution", 30);
   const parsed = resolveRepairDelaySchema.safeParse({ delayId: formString(formData, "delayId"), resolutionNotes: formString(formData, "resolutionNotes") });
   if (!parsed.success) redirect("/faults?error=invalid-delay-resolution");
   const delay = await prisma.repairDelay.findUnique({ where: { id: parsed.data.delayId }, include: { repairJob: { include: { faultReport: { include: { waterPoint: true } } } } } });
@@ -585,6 +603,7 @@ export async function resolveRepairDelayAction(formData: FormData) {
 
 export async function addRepairEvidenceAction(formData: FormData) {
   const { user } = await requireUser(["ADMIN", "OPERATOR", "TECHNICIAN"]);
+  if (!await consumeUserActionRateLimit({ userId: user.id, action: "repair-evidence-upload", limit: 20, windowMs: 60 * 60 * 1000 })) redirect(`/faults/${formString(formData, "faultId").trim()}?error=rate-limited`);
   const faultId = formString(formData, "faultId").trim();
   const caption = formString(formData, "caption").trim();
   if (caption.length > 300) redirect(`/faults/${faultId}?error=invalid-evidence-caption`);
@@ -612,6 +631,7 @@ export async function addRepairEvidenceAction(formData: FormData) {
 
 export async function updateRepairStatusAction(formData: FormData) {
   const { user } = await requireUser(["ADMIN", "OPERATOR", "TECHNICIAN"]);
+  await enforceActionRateLimit(user.id, "repair-status-update", 60);
   const faultId = formString(formData, "faultId").trim();
   const nextStatus = formString(formData, "status") as FaultStatus;
   const notes = formString(formData, "notes").trim();
@@ -663,6 +683,7 @@ export async function updateRepairStatusAction(formData: FormData) {
 
 export async function confirmRestorationAction(formData: FormData) {
   const { user } = await requireUser();
+  await enforceActionRateLimit(user.id, "restoration-confirmation", 20);
   const faultId = formString(formData,"faultId"); const result = formString(formData,"result"); const notes = formString(formData,"notes").trim();
   if (notes.length > 1000) redirect(`/faults/${faultId}?error=invalid-confirmation`);
   const fault = await prisma.faultReport.findUnique({ where: { id: faultId }, include: { repairJob: true, waterPoint: true } });
@@ -711,6 +732,7 @@ export async function confirmRestorationAction(formData: FormData) {
 
 export async function setUserRoleAction(formData: FormData) {
   const { user: actor } = await requireUser(["ADMIN"]);
+  await enforceActionRateLimit(actor.id, "user-access-update", 30);
   const targetId = formString(formData, "userId").trim();
   const role = formString(formData, "role") as UserRole;
   const accountStatus = formString(formData, "accountStatus") as AccountStatus;
@@ -833,6 +855,7 @@ export async function setUserRoleAction(formData: FormData) {
 
 export async function revokeOwnSessionAction(formData: FormData) {
   const { user, session: activeSession } = await requireUser();
+  await enforceActionRateLimit(user.id, "session-revocation", 30);
   const sessionId = formString(formData, "sessionId").trim();
   if (!sessionId) redirect("/account/security?error=invalid-session");
 
@@ -864,6 +887,7 @@ export async function revokeOwnSessionAction(formData: FormData) {
 
 export async function overridePriorityAction(formData: FormData) {
   const { user } = await requireUser(["ADMIN", "OPERATOR"]);
+  await enforceActionRateLimit(user.id, "priority-override", 30);
   const faultId = formString(formData, "faultId");
   const priority = formString(formData, "priority") as PriorityLevel;
   const reason = formString(formData, "reason").trim();

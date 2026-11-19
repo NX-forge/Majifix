@@ -61,4 +61,3 @@ The repository archive supplied for this phase did not include the existing init
 11. Call the dispatch endpoint without a secret and confirm HTTP 401. Call it with the secret and verify successful delivery or a recorded retry state.
 
 Email delivery is asynchronous. A queued notification is not proof that an email reached the recipient's inbox. The `SENT` state means the email provider accepted the send request.
-

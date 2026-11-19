@@ -10,6 +10,7 @@ const errors: Record<string, string> = {
   invalid: "Check the form. Provide valid details and both coordinates, or leave both blank.",
   "duplicate-code": "That water-point code is already in use. Choose a different code.",
   "invalid-operator": "Select an active operator account or leave the water point unassigned.",
+  "rate-limited": "Too many water-point changes were submitted. Try again later.",
 };
 
 export default async function EditWaterPointPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string }> }) {
