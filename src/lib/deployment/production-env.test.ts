@@ -2,20 +2,23 @@ import { describe, expect, it } from "vitest";
 import { validateProductionEnvironment } from "../../../scripts/production-env.mjs";
 
 const validEnvironment = {
-  DATABASE_URL: "postgresql://user:password@ep-example.us-east-2.aws.neon.tech/majifix?sslmode=require",
-  BETTER_AUTH_SECRET: "a-unique-production-auth-secret-with-more-than-32-characters",
-  NOTIFICATION_WORKER_SECRET: "a-different-unique-worker-secret-with-more-than-32-characters",
+  NODE_ENV: "production",
+  DATABASE_URL: "postgresql://neondb_owner:npg_2NR8nVFWKbAO@ep-bold-heart-bev3zze0-pooler.c-9.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+  BETTER_AUTH_SECRET: "dDIn63zhURPHBl8UcOQgxaR+fADGq06064JVZUHZxW0=",
+  NOTIFICATION_WORKER_SECRET: "RPKVpyxCAoRKwoeay+3VzbVYq9F25ipqO4ZayTaHdjA=",
   BETTER_AUTH_URL: "https://majifix.example.ke",
   NEXT_PUBLIC_APP_URL: "https://majifix.example.ke",
   RESEND_API_KEY: "re_live_validlookingkey",
   RESEND_FROM_EMAIL: "MajiFix <no-reply@majifix.example.ke>",
-};
+} as const;
 
 describe("production environment validation", () => {
   it("accepts a complete secure production environment", () => expect(validateProductionEnvironment(validEnvironment)).toEqual([]));
-  it("rejects missing configuration", () => expect(validateProductionEnvironment({})).toHaveLength(8));
+  it("rejects missing configuration", () => expect(validateProductionEnvironment({
+    NODE_ENV: "production"
+  })).toHaveLength(8));
   it("rejects localhost and PostgreSQL URLs without TLS", () => {
-    const errors = validateProductionEnvironment({ ...validEnvironment, DATABASE_URL: "postgresql://user:password@localhost:5432/majifix" });
+    const errors = validateProductionEnvironment({ ...validEnvironment, DATABASE_URL: "postgresql://localhost:5432/neondb" });
     expect(errors).toContain("DATABASE_URL must point to a managed or remote production database, not localhost.");
     expect(errors).toContain("DATABASE_URL must enable TLS (for Neon, use sslmode=require).");
   });
