@@ -318,3 +318,8 @@ Phase 9 refreshes the public landing page, shared application navigation and das
 The interface includes a skip-to-content link, keyboard focus styles, active-route indicators, reduced-motion support, responsive forms and horizontally scrollable data tables on small screens. No Prisma schema changes were needed.
 
 See [Phase 9 acceptance](docs/PHASE_9_ACCEPTANCE.md) for the completed scope and local verification commands.
+
+
+## Deployment and production readiness
+
+See [Phase 10 deployment guide](docs/DEPLOYMENT.md), [operations runbook](docs/OPERATIONS.md), and [Phase 10 acceptance checklist](docs/PHASE_10_ACCEPTANCE.md). The project includes a Vercel configuration, multi-stage Dockerfile, production Docker Compose file, database readiness endpoint, production environment preflight, and GitHub Actions quality workflow. Production deployment still requires your hosting account, Neon production credentials, verified Resend sender, domain, backup policy, and the authoritative Prisma migration history.

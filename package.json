@@ -1,6 +1,6 @@
 {
   "name": "majifix",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.28.0",
@@ -25,7 +25,10 @@
     "test:e2e": "playwright test",
     "security:audit": "pnpm audit --prod",
     "db:retention:report": "tsx scripts/retention-maintenance.ts",
-    "db:retention:execute": "tsx scripts/retention-maintenance.ts --execute"
+    "db:retention:execute": "tsx scripts/retention-maintenance.ts --execute",
+    "start:production": "node scripts/production-env.mjs && next start",
+    "preflight:production": "node scripts/production-env.mjs",
+    "release:check": "pnpm preflight:production && pnpm typecheck && pnpm lint && pnpm test && pnpm build"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

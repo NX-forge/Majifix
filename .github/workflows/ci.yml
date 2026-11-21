@@ -1,0 +1,52 @@
+name: MajiFix CI
+
+on:
+  push:
+    branches: [main, master, dev, development]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: majifix-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Typecheck, lint, tests and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://build:build@127.0.0.1:5432/majifix?schema=public
+      BETTER_AUTH_SECRET: ci-only-placeholder-secret-with-more-than-32-characters
+      BETTER_AUTH_URL: https://majifix.example.invalid
+      NEXT_PUBLIC_APP_URL: https://majifix.example.invalid
+      RESEND_API_KEY: re_ci_build_placeholder
+      RESEND_FROM_EMAIL: MajiFix <ci@example.invalid>
+      NOTIFICATION_WORKER_SECRET: ci-only-worker-secret-with-more-than-32-characters
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Lint
+        run: pnpm lint
+      - name: Unit tests
+        run: pnpm test
+      - name: Production build
+        run: pnpm build
